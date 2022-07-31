@@ -1,0 +1,24 @@
+---
+- name: Ubuntu specific tasks
+  become: yes
+  when: ansible_facts['distribution'] == 'Ubuntu'
+  block:
+  - name: Remove cloud-config to avoid boot delay
+    apt:
+      name: cloud-config
+      state: absent
+
+  - name: Make sure iSCSId and Open-iSCSId services are disabled
+    service:
+      name: "{{ item }}"
+      state: stopped
+      enabled: no
+    with_items:
+      - iscsid
+      - open-iscsi
+
+- name: Install zfs
+  become: yes
+  ansible.builtin.apt:
+    name: zfsutils-linux
+    state: present

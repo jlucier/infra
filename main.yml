@@ -1,0 +1,9 @@
+- name: Initial server setup
+  hosts: all
+  tasks:
+    - name: System install
+      include_role:
+        name: roles/system
+      vars:
+        username: jordan
+        ansible_become: yes
