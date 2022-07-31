@@ -1,4 +1,4 @@
 ---
-- include_tasks: basic.yml
-- include_tasks: docker.yml
-- include_tasks: yeet_snaps.yml
+- import_tasks: basic.yml
+- import_tasks: docker.yml
+- import_tasks: yeet_snaps.yml

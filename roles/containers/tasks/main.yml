@@ -1,0 +1,11 @@
+---
+- name: Watchtower container
+  tags: watchtower
+  docker_container:
+    name: watchtower
+    image: "containrrr/watchtower"
+    pull: yes
+    state: 'started'
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    restart_policy: unless-stopped
