@@ -18,7 +18,6 @@
       tags:
         - node_exporter
         - monitoring
-        - containers
 
     - role: roles/system
       become: yes

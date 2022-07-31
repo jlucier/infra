@@ -1,11 +1,120 @@
 ---
+- name: Create network for docker services
+  tags: containers
+  docker_network:
+    state: absent
+    name: homeboi_services
+
 - name: Watchtower container
-  tags: watchtower
+  tags: containers watchtower
   docker_container:
     name: watchtower
     image: "containrrr/watchtower"
     pull: yes
-    state: 'started'
+    state: "started"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
+    restart_policy: unless-stopped
+
+- name: Prometheus
+  tags:
+    - containers
+    - prometheus
+  block:
+    - name: Create and chmod folders
+      become: yes
+      file:
+        path: "{{ item }}"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        state: directory
+        mode: 0755
+        recurse: yes
+      with_items:
+        - "{{ docker_dir }}/prometheus/etc"
+        - "{{ docker_dir }}/prometheus"
+
+    - name: Install the Prometheus config
+      copy:
+        src: files/prometheus.yml
+        dest: "{{ docker_dir }}/prometheus/etc/prometheus.yml"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        mode: 0755
+      notify: restart prometheus
+
+    - name: Make sure the Prometheus container is created and running
+      docker_container:
+        name: prometheus
+        image: "prom/prometheus"
+        pull: yes
+        state: started
+        networks:
+          - name: host
+        user: "{{ uid }}"
+        env:
+          "PUID": "{{ guid }}"
+          "PGID": "{{ guid }}"
+          "TZ": "{{ timezone }}"
+        command:
+          - "--config.file=/etc/prometheus/prometheus.yml"
+          - "--storage.tsdb.path=/prometheus"
+          - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+          - "--web.console.templates=/usr/share/prometheus/consoles"
+        volumes:
+          - "{{ docker_dir }}/prometheus/etc:/etc/prometheus"
+          - "{{ docker_dir }}/prometheus:/prometheus"
+        restart_policy: unless-stopped
+
+- name: Grafana
+  tags:
+    - containers
+    - grafana
+  block:
+    - name: Create and chmod Grafana folder
+      become: yes
+      file:
+        path: "{{ docker_dir }}/grafana"
+        owner: 472
+        group: 0
+        state: directory
+        recurse: yes
+
+    - name: Make sure the Grafana container is created and running
+      docker_container:
+        name: grafana
+        image: "grafana/grafana:main"
+        pull: yes
+        networks:
+          - name: host
+        state: started
+        user: "472"
+        env:
+          "TZ": "{{ timezone }}"
+        volumes:
+          - "{{ docker_dir }}/grafana:/var/lib/grafana"
+        restart_policy: unless-stopped
+
+
+- name: Make sure cAdvisor container is created and running
+  tags:
+    - containers
+    - cadvisor
+  docker_container:
+    name: cadvisor
+    image: gcr.io/cadvisor/cadvisor
+    pull: yes
+    state: started
+    privileged: yes
+    networks:
+      - name: host
+    devices:
+      - /dev/kmsg
+    volumes:
+      - "{{ docker_dir }}/grafana:/var/lib/grafana"
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
     restart_policy: unless-stopped
