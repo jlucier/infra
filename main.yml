@@ -21,5 +21,7 @@
 
     - role: roles/system
       become: yes
+      tags:
+        - system
 
     - role: roles/containers

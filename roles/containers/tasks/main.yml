@@ -1,10 +1,4 @@
 ---
-- name: Create network for docker services
-  tags: containers
-  docker_network:
-    state: absent
-    name: homeboi_services
-
 - name: Watchtower container
   tags: containers watchtower
   docker_container:
@@ -118,3 +112,37 @@
       - /var/lib/docker/:/var/lib/docker:ro
       - /dev/disk/:/dev/disk:ro
     restart_policy: unless-stopped
+
+
+- name: Jellyfin
+  tags:
+    - containers
+    - jellyfin
+  block:
+    - name: Create and chmod folders
+      become: yes
+      file:
+        path: "{{ item }}"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        state: directory
+        mode: 0755
+        recurse: yes
+      with_items:
+        - "{{ docker_dir }}/jellyfin/config"
+        - "{{ docker_dir }}/jellyfin/cache"
+
+    - name: Make sure the Jellyfin container is created and running
+      docker_container:
+        name: jellyfin
+        image: "jellyfin/jellyfin"
+        pull: yes
+        state: started
+        networks:
+          - name: host
+        user: "{{ uid }}"
+        volumes:
+          - "{{ docker_dir }}/jellyfin/config:/config"
+          - "{{ docker_dir }}/jellyfin/cache:/cache"
+          - "/growingboi/media:/media"
+        restart_policy: unless-stopped
