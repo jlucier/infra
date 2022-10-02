@@ -1,0 +1,13 @@
+- name: Wireguard VPN setup
+  hosts: vpn
+  vars_files:
+    - vars/defaults.yml
+    - vars/vpn.yml
+  roles:
+    - role: roles/docker
+      become: yes
+
+    - role: roles/vpn
+      become: yes
+      tags:
+        - wireguard

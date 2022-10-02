@@ -54,7 +54,9 @@
 
 - name: Nvidia Docker
   tags: nvidia-docker
-  when: "'nvidia-docker2' not in ansible_facts.packages"
+  when:
+    - "'nvidia-docker2' not in ansible_facts.packages"
+    - "enable_nvidia_docker | default(False)"
   block:
     - name: Add nvidia-docker GPG key
       apt_key:

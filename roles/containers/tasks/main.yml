@@ -146,3 +146,4 @@
           - "{{ docker_dir }}/jellyfin/cache:/cache"
           - "/growingboi/media:/media"
         restart_policy: unless-stopped
+        runtime: nvidia
