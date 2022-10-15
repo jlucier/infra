@@ -33,3 +33,8 @@
         - system
 
     - role: roles/containers
+
+    - role: roles/vpn
+      become: yes
+      tags:
+        - wireguard
