@@ -147,3 +147,42 @@
           - "/growingboi/media:/media"
         restart_policy: unless-stopped
         runtime: nvidia
+
+- name: Homer
+  tags:
+    - containers
+    - homer
+  block:
+    - name: Create and chmod folders
+      become: yes
+      file:
+        path: "{{ item }}"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        state: directory
+        mode: 0755
+        recurse: yes
+      with_items:
+        - "{{ docker_dir }}/homer"
+
+    - name: Install the Homer config
+      copy:
+        src: "files/homer/"
+        dest: "{{ docker_dir }}/homer/"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        mode: 0755
+      notify: restart homer
+
+    - name: Make sure the Homer container is created and running
+      docker_container:
+        name: homer
+        image: "b4bz/homer"
+        pull: yes
+        state: started
+        ports:
+          - 80:8080
+        user: "{{ uid }}"
+        volumes:
+          - "{{ docker_dir }}/homer:/www/assets"
+        restart_policy: unless-stopped

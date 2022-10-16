@@ -4,3 +4,9 @@
     name: prometheus
     restart: yes
     state: started
+
+- name: restart homer
+  docker_container:
+    name: homer
+    restart: yes
+    state: started
