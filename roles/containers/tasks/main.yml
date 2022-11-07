@@ -186,3 +186,71 @@
         volumes:
           - "{{ docker_dir }}/homer:/www/assets"
         restart_policy: unless-stopped
+
+- name: Pi-hole
+  tags:
+    - containers
+    - pihole
+  block:
+    - name: Create and chmod folders
+      become: yes
+      file:
+        path: "{{ item }}"
+        owner: root
+        group: root
+        state: directory
+        mode: 0755
+        recurse: yes
+      with_items:
+        - "{{ docker_dir }}/pihole"
+
+    - name: Fix systemd-resolved
+      become: yes
+      lineinfile:
+        dest: "/etc/systemd/resolved.conf"
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+        state: present
+        mode: 0644
+      with_items:
+        - regexp: "^DNSStubListener"
+          line: "DNSStubListener=no"
+      register: resolved
+
+    - name: Restart resolved
+      when: resolved.changed
+      become: yes
+      ansible.builtin.systemd:
+        name: systemd-resolved
+        state: restarted
+
+    - name: Edit resolve.conf
+      become: yes
+      ansible.builtin.file:
+        src: /run/systemd/resolve/resolv.conf
+        dest: /etc/resolv.conf
+        state: link
+
+    - name: Make sure the Pi-hole container is created and running
+      docker_container:
+        name: pihole
+        image: "pihole/pihole"
+        pull: yes
+        state: started
+        ports:
+          - 8081:80
+          - 53:53/tcp
+          - 53:53/udp
+        env:
+          "TZ": "America/New_York"
+          "VIRTUAL_HOST": "pi.hole"
+          "PROXY_LOCATION": "pi.hole"
+          "FTLCONF_LOCAL_IPV4": "192.168.86.213"
+        hostname: "pi.hole"
+        dns_servers:
+          - 127.0.0.1
+          - 1.1.1.1
+        volumes:
+          - "{{ docker_dir }}/pihole/etc-pihole:/etc/pihole"
+          - "{{ docker_dir }}/pihole/etc-dnsmasq.d:/etc/dnsmasq.d"
+        restart_policy: unless-stopped
