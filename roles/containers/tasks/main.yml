@@ -100,8 +100,8 @@
     pull: yes
     state: started
     privileged: yes
-    networks:
-      - name: host
+    ports:
+      - 8082:8080
     devices:
       - /dev/kmsg
     volumes:
@@ -253,4 +253,40 @@
         volumes:
           - "{{ docker_dir }}/pihole/etc-pihole:/etc/pihole"
           - "{{ docker_dir }}/pihole/etc-dnsmasq.d:/etc/dnsmasq.d"
+        restart_policy: unless-stopped
+
+- name: Unifi Controller
+  tags:
+    - containers
+    - unifi
+  block:
+    - name: Create and chmod folders
+      become: yes
+      file:
+        path: "{{ item }}"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        state: directory
+        mode: 0755
+        recurse: yes
+      with_items:
+        - "{{ docker_dir }}/unifi"
+
+    - name: Install Unifi Controller
+      docker_container:
+        name: unifi
+        image: "linuxserver/unifi-controller"
+        pull: yes
+        state: started
+        ports:
+          - 8443:8443
+          - 3478:3478/udp
+          - 10001:10001/udp
+          - 8080:8080
+        env:
+          "TZ": "America/New_York"
+          "PUID": "1000"
+          "PGID": "1000"
+        volumes:
+          - "{{ docker_dir }}/unifi:/config"
         restart_policy: unless-stopped
