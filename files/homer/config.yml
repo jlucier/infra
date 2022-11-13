@@ -49,6 +49,14 @@ services:
         logo: "assets/icons/jellyfin.png"
         url: "http://homeboi.lan:8096"
         target: "new"
+
+  - name: "Network"
+    icon: "fas fa-network-wired"
+    items:
+      - name: "EdgeOS"
+        logo: "assets/icons/edge.png"
+        url: "https://192.168.1.1"
+        target: "new"
       - name: "UniFi"
         logo: "assets/icons/unifi.svg"
         url: "https://homeboi.lan:8443"
@@ -57,6 +65,7 @@ services:
         logo: "assets/icons/pihole.png"
         url: "http://homeboi.lan:8081/admin/"
         target: "new"
+
 
   - name: "Analytics"
     icon: "fas fa-chart-simple"
