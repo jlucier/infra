@@ -239,17 +239,14 @@
         state: started
         ports:
           - 8081:80
-          - 53:53/tcp
+          - "{{ local_ip }}:53:53/tcp"
           - 53:53/udp
         env:
-          "TZ": "America/New_York"
-          "VIRTUAL_HOST": "pi.hole"
-          "PROXY_LOCATION": "pi.hole"
-          "FTLCONF_LOCAL_IPV4": "192.168.86.213"
+          TZ: "America/New_York"
+          VIRTUAL_HOST: "pi.hole"
+          PROXY_LOCATION: "pi.hole"
+          FTLCONF_LOCAL_IPV4: "{{ local_ip }}"
         hostname: "pi.hole"
-        dns_servers:
-          - 127.0.0.1
-          - 1.1.1.1
         volumes:
           - "{{ docker_dir }}/pihole/etc-pihole:/etc/pihole"
           - "{{ docker_dir }}/pihole/etc-dnsmasq.d:/etc/dnsmasq.d"
