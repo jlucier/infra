@@ -1,0 +1,19 @@
+---
+- name: GoDaddy DDNS
+  tags:
+    - godaddy
+    - ddns
+  become: yes
+  block:
+    - name: Install the DDNS script
+      ansible.builtin.template:
+        src: "files/gdddns.j2"
+        dest: "/usr/local/bin/gdddns.sh"
+        mode: 0500
+
+    - name: Create cronjob
+      ansible.builtin.cron:
+        name: GoDaddy DDNS
+        user: root
+        minute: "*/10"
+        job: "/usr/local/bin/gdddns.sh > /dev/null"

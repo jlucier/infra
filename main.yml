@@ -38,3 +38,7 @@
       become: yes
       tags:
         - wireguard
+
+    - role: roles/ddns
+      tags:
+        - ddns
