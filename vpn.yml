@@ -2,6 +2,7 @@
   hosts: vpn
   vars_files:
     - vars/defaults.yml
+    - vars/vault.yml
     - vars/vpn.yml
   roles:
     - role: roles/docker
@@ -11,3 +12,7 @@
       become: yes
       tags:
         - wireguard
+
+    - role: roles/ddns
+      tags:
+        - ddns

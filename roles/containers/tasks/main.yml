@@ -195,26 +195,21 @@
     - name: Create and chmod folders
       become: yes
       file:
-        path: "{{ item }}"
+        path: "{{ docker_dir }}/pihole"
         owner: root
         group: root
         state: directory
         mode: 0755
         recurse: yes
-      with_items:
-        - "{{ docker_dir }}/pihole"
 
     - name: Fix systemd-resolved
       become: yes
       lineinfile:
         dest: "/etc/systemd/resolved.conf"
-        regexp: "{{ item.regexp }}"
-        line: "{{ item.line }}"
+        regexp: "^DNSStubListener"
+        line: "DNSStubListener=no"
         state: present
         mode: 0644
-      with_items:
-        - regexp: "^DNSStubListener"
-          line: "DNSStubListener=no"
       register: resolved
 
     - name: Restart resolved
@@ -240,7 +235,7 @@
         ports:
           - 8081:80
           - "{{ local_ip }}:53:53/tcp"
-          - 53:53/udp
+          - "{{ local_ip }}:53:53/udp"
         env:
           TZ: "America/New_York"
           VIRTUAL_HOST: "pi.hole"
