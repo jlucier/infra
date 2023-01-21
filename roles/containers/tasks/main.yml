@@ -282,3 +282,21 @@
         volumes:
           - "{{ docker_dir }}/unifi:/config"
         restart_policy: unless-stopped
+
+- name: Syncthing
+  tags:
+    - containers
+    - syncthing
+  docker_container:
+    name: syncthing
+    image: "syncthing/syncthing"
+    pull: yes
+    state: started
+    networks:
+      - name: host
+    env:
+      "PUID": "1000"
+      "PGID": "1000"
+    volumes:
+      - "/growingboi/syncthing-test:/var/syncthing"
+    restart_policy: unless-stopped

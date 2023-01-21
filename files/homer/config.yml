@@ -49,6 +49,10 @@ services:
         logo: "assets/icons/jellyfin.png"
         url: "http://homeboi.lan:8096"
         target: "new"
+      - name: "Syncthing"
+        logo: "assets/icons/syncthing.png"
+        url: "http://homeboi.lan:8384"
+        target: "new"
 
   - name: "Network"
     icon: "fas fa-network-wired"
