@@ -3,15 +3,17 @@ global:
   scrape_timeout: 5s
 
 scrape_configs:
-  - job_name: services
+  - job_name: homeboi
     metrics_path: /metrics
     static_configs:
       - targets:
         - 'localhost:9100' # node-exporter
         - 'localhost:8082' # cAdvisor
+        - '192.168.13.37:80' # homeboi s31
 
   - job_name: garden
     metrics_path: /metrics
     static_configs:
       - targets:
         - '192.168.13.5:80' # garduino
+        - '192.168.13.36:80' # garden s31

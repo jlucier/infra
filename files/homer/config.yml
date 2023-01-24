@@ -65,9 +65,13 @@ services:
         logo: "assets/icons/unifi.svg"
         url: "https://homeboi.lan:8443"
         target: "new"
-      - name: "Pi-hole"
+      - name: "Pi-hole (main)"
         logo: "assets/icons/pihole.png"
         url: "http://homeboi.lan:8081/admin/"
+        target: "new"
+      - name: "Pi-hole (failover)"
+        logo: "assets/icons/pihole.png"
+        url: "http://brix.lan:8081/admin/"
         target: "new"
 
 
