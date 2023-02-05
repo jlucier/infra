@@ -59,7 +59,7 @@ services:
     items:
       - name: "EdgeOS"
         logo: "assets/icons/edge.png"
-        url: "https://192.168.13.1"
+        url: "https://edge.lan"
         target: "new"
       - name: "UniFi"
         logo: "assets/icons/unifi.svg"
