@@ -1,3 +1,4 @@
 inventory.*
+vars
 vars/**/*
 **/.DS_Store
