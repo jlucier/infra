@@ -16,9 +16,10 @@ month = 6
 
 [fs.storage]
 fs = "growingboi/storage"
-exclude = [
-  "wireguard",
-]
 
 [fs.docker]
 fs = "growingboi/docker"
+exclude = [
+  "wireguard",
+  "grafana",
+]
