@@ -1,3 +1,4 @@
 ---
 - import_tasks: basic.yml
 - import_tasks: yeet_snaps.yml
+- import_tasks: backups.yml

@@ -1,0 +1,24 @@
+# keep snapshots on local file system for this many days
+keep_snapshot_days = 7
+log_file = "~/backups/backup.log"
+
+# the repo prefix in which to back up the data (will make sub-repos for each filesystem backup)
+repo_prefix = "~/borg_repos"
+# keyfile exports will be here
+keyfile_export_dir = "~/.borg_keys"
+# file in which to store the passphrase
+borg_pass_file = "~/.borg_pass"
+
+# how many of each type of backup to keep
+day = 7
+week = 4
+month = 6
+
+[fs.storage]
+fs = "growingboi/storage"
+exclude = [
+  "wireguard",
+]
+
+[fs.docker]
+fs = "growingboi/docker"

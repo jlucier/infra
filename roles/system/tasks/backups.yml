@@ -1,0 +1,40 @@
+---
+- name: Install borg
+  tags:
+    - backups
+  get_url:
+    url: https://github.com/borgbackup/borg/releases/download/2.0.0b5/borg-linux64
+    dest: /usr/local/bin/borg
+    mode: 775
+
+- name: Install python3.11
+  tags:
+    - backups
+  apt:
+    name: python3.11
+    state: present
+
+
+- name: Install backup script
+  tags:
+    - backups
+  block:
+    - name: Copy script + config
+      copy:
+        src: files/backups
+        dest: "/home/{{ username }}/"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+
+    - name: Make script executable
+      file:
+        path: "/home/{{ username }}/backups/backup.py"
+        mode: "775"
+
+    - name: Install cron
+      cron:
+        name: "Automated backups"
+        job: "/home/{{ username }}/backups/backup.py"
+        special_time: daily
+        state: present
+        user: "{{ username }}"
