@@ -7,8 +7,8 @@ scrape_configs:
     metrics_path: /metrics
     static_configs:
       - targets:
-        - 'localhost:9100' # node-exporter
-        - 'localhost:8082' # cAdvisor
+        - 'localhost:{{ node_exporter_http }}' # node-exporter
+        - 'localhost:{{ cadvisor_http }}' # cAdvisor
         - '192.168.13.37:80' # homeboi s31
 
   - job_name: garden
@@ -17,3 +17,9 @@ scrape_configs:
       - targets:
         - '192.168.13.5:80' # garduino
         - '192.168.13.36:80' # garden s31
+
+  - job_name: wud
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+        - 'localhost:{{ wud_http }}'

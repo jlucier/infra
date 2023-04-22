@@ -1,4 +1,14 @@
 ---
+- name: CORS container
+  tags:
+    - containers
+    - cors
+  docker_container:
+    name: cors
+    image: imjacobclark/cors-container
+    ports:
+      - "{{ cors_http }}:3000"
+
 - name: Prometheus
   tags:
     - containers
@@ -18,7 +28,7 @@
         - "{{ docker_dir }}/prometheus"
 
     - name: Install the Prometheus config
-      copy:
+      template:
         src: files/prometheus.yml
         dest: "{{ docker_dir }}/prometheus/etc/prometheus.yml"
         owner: "{{ username }}"
@@ -90,7 +100,7 @@
     state: started
     privileged: yes
     ports:
-      - 8082:8080
+      - "{{ cadvisor_http }}:8080"
     devices:
       - /dev/kmsg
     volumes:
@@ -101,6 +111,22 @@
       - /var/lib/docker/:/var/lib/docker:ro
       - /dev/disk/:/dev/disk:ro
     restart_policy: unless-stopped
+
+
+- name: WUD
+  tags:
+    - containers
+    - wud
+  docker_container:
+    name: whats-up-docker
+    image: fmartinou/whats-up-docker
+    env:
+      WUD_WATCHER_LOCAL_SOCKET: "/var/run/docker.sock"
+      WUD_WATCHER_BRIX_HOST: brix.lan
+    ports:
+      - "{{ wud_http }}:3000"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
 
 
 - name: Jellyfin
@@ -154,14 +180,22 @@
       with_items:
         - "{{ docker_dir }}/homer"
 
-    - name: Install the Homer config
+    - name: Homer icons
       copy:
-        src: "files/homer/"
+        src: "files/homer/icons"
         dest: "{{ docker_dir }}/homer/"
         owner: "{{ username }}"
         group: "{{ username }}"
         mode: 0755
       notify: restart homer
+
+    - name: Homer config
+      template:
+        src: "files/homer/config.yml"
+        dest: "{{ docker_dir }}/homer/"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        mode: 0755
 
     - name: Make sure the Homer container is created and running
       docker_container:
@@ -170,7 +204,7 @@
         pull: yes
         state: started
         ports:
-          - 80:8080
+          - "{{ homer_http }}:8080"
         user: "{{ uid }}"
         volumes:
           - "{{ docker_dir }}/homer:/www/assets"
@@ -222,7 +256,7 @@
         pull: yes
         state: started
         ports:
-          - 8081:80
+          - "{{ pihole_http }}:80"
           - "{{ local_ip }}:53:53/tcp"
           - "{{ local_ip }}:53:53/udp"
         env:
@@ -260,16 +294,49 @@
         pull: yes
         state: started
         ports:
-          - 8443:8443
+          - "{{ unifi_https }}:8443"
+          - "{{ unifi_http }}:8080"
           - 3478:3478/udp
           - 10001:10001/udp
-          - 8080:8080
         env:
           "TZ": "America/New_York"
           "PUID": "1000"
           "PGID": "1000"
         volumes:
           - "{{ docker_dir }}/unifi:/config"
+        restart_policy: unless-stopped
+
+- name: SpeedtestTracker
+  tags:
+    - containers
+    - speedtest
+  block:
+    - name: Create and chmod folders
+      become: yes
+      file:
+        path: "{{ item }}"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        state: directory
+        mode: 0755
+        recurse: yes
+      with_items:
+        - "{{ docker_dir }}/speedtest"
+
+    - name: Run speedtest tracker
+      docker_container:
+        name: speedtesttracker
+        image: "ghcr.io/alexjustesen/speedtest-tracker"
+        pull: yes
+        state: started
+        env:
+          "PUID": "1000"
+          "PGID": "1000"
+        ports:
+          - "{{ speedtest_http }}:80"
+          - "{{ speedtest_https }}:8443"
+        volumes:
+          - "{{ docker_dir }}/speedtest:/config"
         restart_policy: unless-stopped
 
 - name: Syncthing
