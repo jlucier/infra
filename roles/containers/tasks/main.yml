@@ -5,6 +5,7 @@
     - cors
   docker_container:
     name: cors
+    pull: yes
     image: imjacobclark/cors-container
     ports:
       - "{{ cors_http }}:3000"
@@ -120,6 +121,7 @@
   docker_container:
     name: whats-up-docker
     image: fmartinou/whats-up-docker
+    pull: yes
     env:
       WUD_WATCHER_LOCAL_SOCKET: "/var/run/docker.sock"
       WUD_WATCHER_BRIX_HOST: brix.lan
