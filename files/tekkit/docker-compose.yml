@@ -1,0 +1,12 @@
+services:
+  server:
+    container_name: tekkit-server
+    build: .
+    volumes:
+      - tekkit:/server
+    ports:
+      - "25565:25565/tcp"
+      - "25565:25565/udp"
+
+volumes:
+  tekkit:

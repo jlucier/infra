@@ -289,3 +289,23 @@
     volumes:
       - "/growingboi/storage/syncthing:/var/syncthing"
     restart_policy: unless-stopped
+
+
+- name: Tekkit server
+  tags:
+    - containers
+    - tekkit
+  block:
+    - name: Install the docker compose project
+      become: yes
+      copy:
+        src: files/tekkit
+        dest: "{{ docker_dir }}/"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        mode: 0755
+
+    - name: Run server
+      docker_compose:
+        project_src: "{{ docker_dir }}/tekkit"
+        build: true
