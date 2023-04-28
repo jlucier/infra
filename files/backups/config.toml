@@ -16,9 +16,11 @@ month = 6
 
 [fs.storage]
 fs = "growingboi/storage"
+repo = "{{ gb_storage_repo }}"
 
 [fs.docker]
 fs = "growingboi/docker"
+repo = "{{ gb_docker_repo }}"
 exclude = [
   "wireguard",
   "grafana",

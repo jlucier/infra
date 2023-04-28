@@ -19,17 +19,20 @@
   tags:
     - backups
   block:
-    - name: Copy script + config
-      copy:
-        src: files/backups
-        dest: "/home/{{ username }}/"
+    - name: Copy config
+      template:
+        src: files/backups/config.toml
+        dest: "/home/{{ username }}/backups/"
         owner: "{{ username }}"
         group: "{{ username }}"
 
-    - name: Make script executable
-      file:
-        path: "/home/{{ username }}/backups/backup.py"
+    - name: Script
+      copy:
+        src: files/backups/backup.py
+        dest: "/home/{{ username }}/backups/backup.py"
         mode: "775"
+        owner: "{{ username }}"
+        group: "{{ username }}"
 
     - name: Install cron
       cron:

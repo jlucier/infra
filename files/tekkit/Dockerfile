@@ -8,5 +8,5 @@ RUN curl -o server.zip https://servers.technicpack.net/Technic/servers/tekkit-2/
 WORKDIR server
 RUN echo eula=true > eula.txt
 ADD ops.json .
-RUN sed -ie "s/level-seed=/level-seed=6930877389195015370/g" server.properties
+ADD server.properties .
 CMD ["java", "-server", "-Xmx8G", "-Dfml.queryResult=confirm", "-jar", "forge-1.12.2-14.23.5.2860.jar", "nogui"]

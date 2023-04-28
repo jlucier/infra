@@ -109,29 +109,24 @@ def snapshot(fs: str, name: str):
     return name
 
 
-def get_repo_from_fs(repo_prefix: str, fs: str):
-    return str(Path(repo_prefix).expanduser() / fs.replace("/", "_"))
-
-
 def make_borg_env(repo: str):
     return {**os.environ, "BORG_PASSPHRASE": BORG_PASSPHRASE, "BORG_REPO": repo}
 
 
-def do_backup(repo_prefix: str, snapshot: str, conf: dict):
+def do_backup(snapshot: str, conf: dict):
     fs, snap_name = snapshot.split("@")
     _, dt = parse_archive_tag(snap_name)
 
-    repo = get_repo_from_fs(repo_prefix, fs)
     snap_dir = Path(get_fs_mountpoint(fs)) / ".zfs/snapshot/" / snap_name
 
-    borg_env = make_borg_env(repo)
+    borg_env = make_borg_env(conf["repo"])
 
     # check if repo exists, create if not
     rinfo = borg_cmd("borg rinfo", env=borg_env, check=False)
     if rinfo.returncode == 2:
         # repo dne, create
         logger.info(f"Creating new repo for {fs}")
-        borg_cmd("borg rcreate --encryption repokey-aes-ocb", env=borg_env)
+        borg_cmd("borg rcreate --encryption repokey-blake2-aes-ocb", env=borg_env)
     elif rinfo.returncode != 0:
         failexit(f"Unexpected return from borg rinfo {rinfo.returncode}")
 
@@ -170,9 +165,6 @@ def initial_setup(config: dict):
     BORG_KEYFILE_EXPORT_DIR = Path(config["keyfile_export_dir"]).expanduser()
     BORG_KEYFILE_EXPORT_DIR.mkdir(exist_ok=True)
 
-    # create repo dir
-    Path(config["repo_prefix"]).expanduser().mkdir(exist_ok=True)
-
 
 def perform_backups(config: dict, fs_conf: dict):
     fs = fs_conf["fs"]
@@ -190,7 +182,7 @@ def perform_backups(config: dict, fs_conf: dict):
 
     for snap in snaps:
         if not is_snapshot_backed_up(snap):
-            do_backup(config["repo_prefix"], snap, fs_conf)
+            do_backup(snap, fs_conf)
             mark_snapshot_backed_up(snap)
 
     logger.info(f"Cleaning snapshots for {fs}")
@@ -201,7 +193,7 @@ def perform_backups(config: dict, fs_conf: dict):
             logger.info(f"Dropping old snapshot {snap}")
             zfs_destroy(snap)
 
-    borg_env = make_borg_env(get_repo_from_fs(config["repo_prefix"], fs))
+    borg_env = make_borg_env(fs_conf["repo"])
 
     logger.info(f"Borg prune for {fs}")
     day = config["day"]
