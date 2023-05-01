@@ -129,6 +129,7 @@
       - "{{ wud_http }}:3000"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
+    restart_policy: unless-stopped
 
 
 - name: Jellyfin
