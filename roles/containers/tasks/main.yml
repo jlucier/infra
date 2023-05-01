@@ -9,6 +9,7 @@
     image: imjacobclark/cors-container
     ports:
       - "{{ cors_http }}:3000"
+    restart_policy: unless-stopped
 
 - name: Prometheus
   tags:
