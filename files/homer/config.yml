@@ -53,12 +53,6 @@ services:
         logo: "assets/icons/syncthing.png"
         url: "http://homeboi.lan:{{ syncthing_http }}"
         target: "new"
-      - name: "What's Up Docker"
-        logo: "assets/icons/wud.png"
-        url: "http://homeboi.lan:{{ wud_http }}"
-        endpoint: "http://homeboi.lan:{{ cors_http }}/http://homeboi.lan:{{ wud_http }}"
-        type: "WUD"
-        target: "new"
 
   - name: "Network"
     icon: "fas fa-network-wired"

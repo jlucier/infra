@@ -1,4 +1,17 @@
 ---
+- name: Watchtower
+  tags:
+    - containers
+    - watchtower
+  docker_container:
+    name: watchtower
+    image: containrrr/watchtower
+    pull: yes
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    restart_policy: unless-stopped
+
+
 - name: CORS container
   tags:
     - containers
@@ -112,24 +125,6 @@
       - /sys:/sys:ro
       - /var/lib/docker/:/var/lib/docker:ro
       - /dev/disk/:/dev/disk:ro
-    restart_policy: unless-stopped
-
-
-- name: WUD
-  tags:
-    - containers
-    - wud
-  docker_container:
-    name: whats-up-docker
-    image: fmartinou/whats-up-docker
-    pull: yes
-    env:
-      WUD_WATCHER_LOCAL_SOCKET: "/var/run/docker.sock"
-      WUD_WATCHER_BRIX_HOST: brix.lan
-    ports:
-      - "{{ wud_http }}:3000"
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock"
     restart_policy: unless-stopped
 
 
