@@ -3,7 +3,7 @@
   tags:
     - backups
   get_url:
-    url: https://github.com/borgbackup/borg/releases/download/2.0.0b5/borg-linux64
+    url: https://github.com/borgbackup/borg/releases/download/2.0.0b6/borg-linux64
     dest: /usr/local/bin/borg
     mode: 775
 
@@ -13,7 +13,6 @@
   apt:
     name: python3.11
     state: present
-
 
 - name: Install backup script
   tags:
