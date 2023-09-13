@@ -361,7 +361,7 @@
     - name: Install the docker compose file
       become: yes
       template:
-        src: "files/torrent/docker-compose.yml.j2"
+        src: "files/torrent/docker-compose.yml"
         dest: "{{ docker_dir }}/qbittorrent/docker-compose.yml"
         owner: "{{ username }}"
         group: "{{ username }}"
