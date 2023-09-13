@@ -11,7 +11,6 @@
       - "/var/run/docker.sock:/var/run/docker.sock"
     restart_policy: unless-stopped
 
-
 - name: CORS container
   tags:
     - containers
@@ -103,7 +102,6 @@
           - "{{ docker_dir }}/grafana:/var/lib/grafana"
         restart_policy: unless-stopped
 
-
 - name: Make sure cAdvisor container is created and running
   tags:
     - containers
@@ -126,7 +124,6 @@
       - /var/lib/docker/:/var/lib/docker:ro
       - /dev/disk/:/dev/disk:ro
     restart_policy: unless-stopped
-
 
 - name: Jellyfin
   tags:
@@ -356,22 +353,26 @@
       - "/growingboi/storage/syncthing:/var/syncthing"
     restart_policy: unless-stopped
 
-
-- name: Tekkit server
+- name: Torrent
   tags:
     - containers
-    - tekkit
+    - torrent
   block:
-    - name: Install the docker compose project
+    - name: Install the docker compose file
       become: yes
-      copy:
-        src: files/tekkit
-        dest: "{{ docker_dir }}/"
+      template:
+        src: "files/torrent/docker-compose.yml.j2"
+        dest: "{{ docker_dir }}/qbittorrent/docker-compose.yml"
         owner: "{{ username }}"
         group: "{{ username }}"
-        mode: 0755
 
-    - name: Run server
+    - name: Install torrent creds
+      become: yes
+      copy:
+        src: "files/torrent/wg0.conf"
+        dest: "{{ docker_dir }}/qbittorrent/"
+        mode: 0500
+
+    - name: Run compose project
       docker_compose:
-        project_src: "{{ docker_dir }}/tekkit"
-        build: true
+        project_src: "{{ docker_dir }}/qbittorrent/"

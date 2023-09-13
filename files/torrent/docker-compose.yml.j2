@@ -1,0 +1,30 @@
+services:
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+      - WEBUI_PORT={{ qbittorrent_http }}
+    network_mode: service:torrentvpn
+    volumes:
+      - "{{ docker_dir }}/qbittorrent/config:/config"
+      - "/growingboi/media/qbit_downloads:/downloads"
+    restart: unless-stopped
+
+  torrentvpn:
+    image: "lscr.io/linuxserver/wireguard"
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    container_name: qbittorrent_wg
+    environment:
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - "{{ docker_dir }}/qbittorrent/wg0.conf:/config/wg0.conf"
+    ports:
+      - {{ qbittorrent_http }}:{{ qbittorrent_http }}
+    restart: unless-stopped

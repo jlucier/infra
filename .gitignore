@@ -2,3 +2,4 @@ inventory.*
 vars
 vars/**/*
 **/.DS_Store
+files/torrent/wg0.conf

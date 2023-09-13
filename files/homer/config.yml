@@ -53,6 +53,10 @@ services:
         logo: "assets/icons/syncthing.png"
         url: "http://homeboi.lan:{{ syncthing_http }}"
         target: "new"
+      - name: "qBittorrent"
+        logo: "assets/icons/qBittorrent.svg"
+        url: "http://homeboi.lan:{{ qbittorrent_http }}"
+        target: "new"
 
   - name: "Network"
     icon: "fas fa-network-wired"
@@ -78,7 +82,6 @@ services:
         url: "http://brix.lan:{{ pihole_http }}/admin/"
         endpoint: "http://homeboi.lan:{{ cors_http }}/http://brix.lan:{{ pihole_http }}/admin/"
         target: "new"
-
 
   - name: "Analytics"
     icon: "fas fa-chart-simple"
