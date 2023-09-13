@@ -42,3 +42,8 @@
     - role: roles/ddns
       tags:
         - ddns
+
+    - role: roles/backup
+      become: yes
+      tags:
+        - backup
