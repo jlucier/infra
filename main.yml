@@ -47,3 +47,8 @@
       become: yes
       tags:
         - backup
+
+    - role: roles/ups
+      become: yes
+      tags:
+        - ups

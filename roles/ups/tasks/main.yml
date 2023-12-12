@@ -1,0 +1,69 @@
+---
+- name: Install apcupsd
+  tags: ups
+  block:
+    - name: Install daemon
+      apt:
+        name: apcupsd
+        state: present
+
+    - name: Set up config
+      replace:
+        backup: true
+        path: /etc/apcupsd/apcupsd.conf
+        regexp: "{{ item.re }}"
+        replace: "{{ item.replace }}"
+      loop:
+        - { re: "^#UPSNAME$", replace: "UPSNAME BE600M1" }
+        - { re: "^DEVICE /dev.*$", replace: "DEVICE" }
+      register: config_file
+
+    - name: Set configured
+      replace:
+        backup: true
+        path: /etc/default/apcupsd
+        regexp: "^ISCONFIGURED=no$"
+        replace: "ISCONFIGURED=yes"
+      register: config_set
+
+    - name: Reload service
+      when: config_file.changed or config_set.changed
+      systemd_service:
+        name: apcupsd
+        state: restarted
+
+- name: Install apcupsd exporter
+  tags: ups
+  block:
+    - name: Install go
+      apt:
+        name: golang
+        state: present
+
+    - name: Build / install
+      shell: |
+        git clone https://github.com/mdlayher/apcupsd_exporter.git apcupsd_exporter
+        cd apcupsd_exporter
+        go build cmd/apcupsd_exporter/main.go
+        cp main /usr/local/bin/apcupsd_exporter
+        cd ../
+        rm -r apcupsd_exporter
+      args:
+        chdir: "/home/{{ username }}/"
+        creates: /usr/local/bin/apcupsd_exporter
+      register: build
+      failed_when: build.rc != 0
+
+    - name: Install service
+      template:
+        src: "files/apcupsd_exporter.service.j2"
+        dest: "/etc/systemd/system/apcupsd_exporter.service"
+      register: apcupsd_exporter_service
+
+    - name: Enable service
+      when: apcupsd_exporter_service.changed
+      systemd_service:
+        name: apcupsd_exporter
+        daemon_reload: true
+        enabled: true
+        state: started
