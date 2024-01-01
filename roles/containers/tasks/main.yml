@@ -377,3 +377,5 @@
     - name: Run compose project
       docker_compose:
         project_src: "{{ docker_dir }}/qbittorrent/"
+
+- import_tasks: gameservers.yml

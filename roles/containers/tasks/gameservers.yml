@@ -1,0 +1,39 @@
+---
+
+- name: Satisfactory
+  tags:
+    - containers
+    - games
+  block:
+    - name: Create and chmod folders
+      become: yes
+      file:
+        path: "{{ item }}"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        state: directory
+        mode: 0755
+        recurse: yes
+      with_items:
+        - "{{ docker_dir }}/satisfactory/config"
+
+    - name: Satisfactory Container
+      docker_container:
+        name: satisfactory-server
+        image: wolveix/satisfactory-server:latest
+        pull: yes
+        state: started
+        restart_policy: unless-stopped
+        volumes:
+          - "{{ docker_dir }}/satisfactory/config:/config"
+        hostname: satisfactory-server
+        ports:
+          - "{{ local_ip }}:7777:7777/udp"
+          - "{{ local_ip }}:15000:15000/udp"
+          - "{{ local_ip }}:15777:15777/udp"
+        env:
+          MAXPLAYERS: "4"
+          PGID: "1000"
+          PUID: "1000"
+          ROOTLESS: "false"
+          STEAMBETA: "false"
