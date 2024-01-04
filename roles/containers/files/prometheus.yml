@@ -18,3 +18,11 @@ scrape_configs:
       - targets:
           - "192.168.13.5:80" # garduino
           - "192.168.13.36:80" # garden s31
+
+  - job_name: bedroom_esp
+    metrics_path: /metrics
+    scrape_interval: 60s
+    static_configs:
+      - targets:
+          - "192.168.13.35:80" # bedroom esp
+          # - "192.168.13.34:80" # other esp
