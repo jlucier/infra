@@ -57,6 +57,10 @@ services:
         logo: "assets/icons/qBittorrent.svg"
         url: "http://homeboi.lan:{{ qbittorrent_http }}"
         target: "new"
+      - name: "PiKVM"
+        logo: "assets/icons/pikvm.png"
+        url: "https://pikvm.lan"
+        target: "new"
 
   - name: "Network"
     icon: "fas fa-network-wired"
