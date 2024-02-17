@@ -275,7 +275,7 @@
         mode: 0500
 
     - name: Run compose project
-      docker_compose:
+      community.docker.docker_compose_v2:
         project_src: "{{ docker_dir }}/qbittorrent/"
 
 - import_tasks: gameservers.yml
