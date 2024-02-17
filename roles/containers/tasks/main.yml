@@ -6,7 +6,7 @@
   docker_container:
     name: watchtower
     image: containrrr/watchtower
-    pull: yes
+    pull: true
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
     restart_policy: unless-stopped
@@ -17,113 +17,13 @@
     - cors
   docker_container:
     name: cors
-    pull: yes
+    pull: true
     image: imjacobclark/cors-container
     ports:
       - "{{ cors_http }}:3000"
     restart_policy: unless-stopped
 
-- name: Prometheus
-  tags:
-    - containers
-    - prometheus
-  block:
-    - name: Create and chmod folders
-      become: yes
-      file:
-        path: "{{ item }}"
-        owner: "{{ username }}"
-        group: "{{ username }}"
-        state: directory
-        mode: 0755
-        recurse: yes
-      with_items:
-        - "{{ docker_dir }}/prometheus/etc"
-        - "{{ docker_dir }}/prometheus"
-
-    - name: Install the Prometheus config
-      template:
-        src: files/prometheus.yml
-        dest: "{{ docker_dir }}/prometheus/etc/prometheus.yml"
-        owner: "{{ username }}"
-        group: "{{ username }}"
-        mode: 0755
-      notify: restart prometheus
-
-    - name: Make sure the Prometheus container is created and running
-      docker_container:
-        name: prometheus
-        image: "prom/prometheus"
-        pull: yes
-        state: started
-        networks:
-          - name: host
-        user: "{{ uid }}"
-        env:
-          "PUID": "{{ guid }}"
-          "PGID": "{{ guid }}"
-          "TZ": "{{ timezone }}"
-        command:
-          - "--config.file=/etc/prometheus/prometheus.yml"
-          - "--storage.tsdb.path=/prometheus"
-          - "--web.console.libraries=/usr/share/prometheus/console_libraries"
-          - "--web.console.templates=/usr/share/prometheus/consoles"
-        volumes:
-          - "{{ docker_dir }}/prometheus/etc:/etc/prometheus"
-          - "{{ docker_dir }}/prometheus:/prometheus"
-        restart_policy: unless-stopped
-
-- name: Grafana
-  tags:
-    - containers
-    - grafana
-  block:
-    - name: Create and chmod Grafana folder
-      become: yes
-      file:
-        path: "{{ docker_dir }}/grafana"
-        owner: 472
-        group: 0
-        state: directory
-        recurse: yes
-
-    - name: Make sure the Grafana container is created and running
-      docker_container:
-        name: grafana
-        image: "grafana/grafana:main"
-        pull: yes
-        networks:
-          - name: host
-        state: started
-        user: "472"
-        env:
-          "TZ": "{{ timezone }}"
-        volumes:
-          - "{{ docker_dir }}/grafana:/var/lib/grafana"
-        restart_policy: unless-stopped
-
-- name: Make sure cAdvisor container is created and running
-  tags:
-    - containers
-    - cadvisor
-  docker_container:
-    name: cadvisor
-    image: gcr.io/cadvisor/cadvisor
-    pull: yes
-    state: started
-    privileged: yes
-    ports:
-      - "{{ cadvisor_http }}:8080"
-    devices:
-      - /dev/kmsg
-    volumes:
-      - "{{ docker_dir }}/grafana:/var/lib/grafana"
-      - /:/rootfs:ro
-      - /var/run:/var/run:ro
-      - /sys:/sys:ro
-      - /var/lib/docker/:/var/lib/docker:ro
-      - /dev/disk/:/dev/disk:ro
-    restart_policy: unless-stopped
+- import_tasks: analytics.yml
 
 - name: Jellyfin
   tags:
@@ -131,14 +31,14 @@
     - jellyfin
   block:
     - name: Create and chmod folders
-      become: yes
+      become: true
       file:
         path: "{{ item }}"
         owner: "{{ username }}"
         group: "{{ username }}"
         state: directory
         mode: 0755
-        recurse: yes
+        recurse: true
       with_items:
         - "{{ docker_dir }}/jellyfin/config"
         - "{{ docker_dir }}/jellyfin/cache"
@@ -147,7 +47,7 @@
       docker_container:
         name: jellyfin
         image: "jellyfin/jellyfin"
-        pull: yes
+        pull: true
         state: started
         networks:
           - name: host
@@ -165,14 +65,14 @@
     - homer
   block:
     - name: Create and chmod folders
-      become: yes
+      become: true
       file:
         path: "{{ item }}"
         owner: "{{ username }}"
         group: "{{ username }}"
         state: directory
         mode: 0755
-        recurse: yes
+        recurse: true
       with_items:
         - "{{ docker_dir }}/homer"
 
@@ -197,7 +97,7 @@
       docker_container:
         name: homer
         image: "b4bz/homer"
-        pull: yes
+        pull: true
         state: started
         ports:
           - "{{ homer_http }}:8080"
@@ -212,17 +112,17 @@
     - pihole
   block:
     - name: Create and chmod folders
-      become: yes
+      become: true
       file:
         path: "{{ docker_dir }}/pihole"
         owner: root
         group: root
         state: directory
         mode: 0755
-        recurse: yes
+        recurse: true
 
     - name: Fix systemd-resolved
-      become: yes
+      become: true
       lineinfile:
         dest: "/etc/systemd/resolved.conf"
         regexp: "^DNSStubListener"
@@ -233,13 +133,13 @@
 
     - name: Restart resolved
       when: resolved.changed
-      become: yes
+      become: true
       ansible.builtin.systemd:
         name: systemd-resolved
         state: restarted
 
     - name: Edit resolve.conf
-      become: yes
+      become: true
       ansible.builtin.file:
         src: /run/systemd/resolve/resolv.conf
         dest: /etc/resolv.conf
@@ -249,7 +149,7 @@
       docker_container:
         name: pihole
         image: "pihole/pihole"
-        pull: yes
+        pull: true
         state: started
         ports:
           - "{{ pihole_http }}:80"
@@ -272,14 +172,14 @@
     - unifi
   block:
     - name: Create and chmod folders
-      become: yes
+      become: true
       file:
         path: "{{ item }}"
         owner: "{{ username }}"
         group: "{{ username }}"
         state: directory
         mode: 0755
-        recurse: yes
+        recurse: true
       with_items:
         - "{{ docker_dir }}/unifi"
 
@@ -287,7 +187,7 @@
       docker_container:
         name: unifi
         image: "linuxserver/unifi-controller"
-        pull: yes
+        pull: true
         state: started
         ports:
           - "{{ unifi_https }}:8443"
@@ -308,14 +208,14 @@
     - speedtest
   block:
     - name: Create and chmod folders
-      become: yes
+      become: true
       file:
         path: "{{ item }}"
         owner: "{{ username }}"
         group: "{{ username }}"
         state: directory
         mode: 0755
-        recurse: yes
+        recurse: true
       with_items:
         - "{{ docker_dir }}/speedtest"
 
@@ -323,7 +223,7 @@
       docker_container:
         name: speedtesttracker
         image: "ghcr.io/alexjustesen/speedtest-tracker"
-        pull: yes
+        pull: true
         state: started
         env:
           "PUID": "1000"
@@ -343,7 +243,7 @@
   docker_container:
     name: syncthing
     image: "syncthing/syncthing"
-    pull: yes
+    pull: true
     state: started
     env:
       "PUID": "1000"
@@ -360,7 +260,7 @@
     - torrent
   block:
     - name: Install the docker compose file
-      become: yes
+      become: true
       template:
         src: "files/torrent/docker-compose.yml"
         dest: "{{ docker_dir }}/qbittorrent/docker-compose.yml"
@@ -368,7 +268,7 @@
         group: "{{ username }}"
 
     - name: Install torrent creds
-      become: yes
+      become: true
       copy:
         src: "files/torrent/wg0.conf"
         dest: "{{ docker_dir }}/qbittorrent/"

@@ -99,12 +99,3 @@ services:
         logo: "assets/icons/grafana.svg"
         url: "http://homeboi.lan:{{ grafana_http }}"
         target: "new"
-      - name: "Prometheus"
-        type: Prometheus
-        logo: "assets/icons/prometheus.svg"
-        url: "http://homeboi.lan:{{ prometheus_http }}"
-        target: "new"
-      - name: "cAdvisor"
-        logo: "assets/icons/cadvisor.png"
-        url: "http://homeboi.lan:{{ cadvisor_http }}"
-        target: "new"

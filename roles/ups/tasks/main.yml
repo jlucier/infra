@@ -61,9 +61,15 @@
       register: apcupsd_exporter_service
 
     - name: Enable service
-      when: apcupsd_exporter_service.changed
       systemd_service:
         name: apcupsd_exporter
         daemon_reload: true
         enabled: true
         state: started
+
+    - name: Bounce apcupsd_exporter_service
+      when: apcupsd_exporter_service.changed
+      systemd_service:
+        name: apcupsd_exporter
+        daemon_reload: true
+        state: restarted

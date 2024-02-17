@@ -1,0 +1,67 @@
+---
+- name: Prometheus Setup
+  tags:
+    - containers
+    - analytics
+    - prometheus
+  block:
+    - name: Create and chmod folders
+      become: true
+      file:
+        path: "{{ item }}"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        state: directory
+        mode: 0755
+        recurse: true
+      with_items:
+        - "{{ docker_dir }}/prometheus/etc"
+        - "{{ docker_dir }}/prometheus"
+
+    - name: Install the Prometheus config
+      template:
+        src: files/prometheus.yml
+        dest: "{{ docker_dir }}/prometheus/etc/prometheus.yml"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+
+- name: Grafana Directory
+  tags:
+    - containers
+    - analytics
+    - grafana
+  become: true
+  file:
+    path: "{{ docker_dir }}/grafana"
+    owner: 472
+    group: 0
+    state: directory
+    recurse: true
+
+- name: Bring up
+  tags:
+    - containers
+    - analytics
+    - grafana
+    - prometheus
+    - cadvisor
+  block:
+    - name: Create compose dir
+      become: true
+      file:
+        path: "{{ docker_dir }}/analytics-compose"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        state: directory
+        recurse: true
+
+    - name: Sync compose file
+      template:
+        src: files/analytics-compose.yml
+        dest: "{{ docker_dir }}/analytics-compose/docker-compose.yml"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+
+    - name: Run compose file
+      community.docker.docker_compose_v2:
+        project_src: "{{ docker_dir }}/analytics-compose"

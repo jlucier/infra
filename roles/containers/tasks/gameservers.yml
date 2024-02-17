@@ -6,14 +6,14 @@
     - games
   block:
     - name: Create and chmod folders
-      become: yes
+      become: true
       file:
         path: "{{ item }}"
         owner: "{{ username }}"
         group: "{{ username }}"
         state: directory
         mode: 0755
-        recurse: yes
+        recurse: true
       with_items:
         - "{{ docker_dir }}/satisfactory/config"
 
@@ -21,7 +21,7 @@
       docker_container:
         name: satisfactory-server
         image: wolveix/satisfactory-server:latest
-        pull: yes
+        pull: true
         state: started
         restart_policy: unless-stopped
         volumes:

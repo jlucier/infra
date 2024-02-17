@@ -1,0 +1,47 @@
+services:
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus
+    user: "{{ uid }}"
+    environment:
+      PUID: "{{ uid }}"
+      PGID: "{{ guid }}"
+      TZ: "{{ timezone }}"
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
+    volumes:
+      - "{{ docker_dir }}/prometheus/etc:/etc/prometheus"
+      - "{{ docker_dir }}/prometheus:/prometheus"
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  cadvisor:
+    container_name: cadvisor
+    image: gcr.io/cadvisor/cadvisor
+    privileged: yes
+    devices:
+      - /dev/kmsg
+    volumes:
+      - "{{ docker_dir }}/grafana:/var/lib/grafana"
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    restart: unless-stopped
+
+  grafana:
+    container_name: grafana
+    image: grafana/grafana:main
+    user: "472"
+    ports:
+      - "{{ grafana_http }}:{{ grafana_http }}"
+    environment:
+      TZ: "{{ timezone }}"
+    volumes:
+      - "{{ docker_dir }}/grafana:/var/lib/grafana"
+    restart: unless-stopped

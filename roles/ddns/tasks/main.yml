@@ -3,7 +3,7 @@
   tags:
     - godaddy
     - ddns
-  become: yes
+  become: true
   block:
     - name: Install the DDNS script
       template:
