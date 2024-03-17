@@ -20,14 +20,14 @@
   block:
     - name: Copy config
       template:
-        src: files/backups/config.toml
+        src: files/config.toml
         dest: "/home/{{ username }}/backups/"
         owner: "{{ username }}"
         group: "{{ username }}"
 
     - name: Script
       copy:
-        src: files/backups/backup.py
+        src: files/backup.py
         dest: "/home/{{ username }}/backups/backup.py"
         mode: "775"
         owner: "{{ username }}"

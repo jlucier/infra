@@ -32,8 +32,6 @@
       tags:
         - system
 
-    - role: roles/containers
-
     - role: roles/vpn
       become: yes
       tags:
@@ -52,3 +50,7 @@
       become: yes
       tags:
         - ups
+
+    - role: roles/containers
+    - role: roles/torrent
+    - role: roles/gameservers
