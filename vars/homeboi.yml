@@ -1,0 +1,10 @@
+username: jordan
+local_ip: "{{ homeboi_ip }}"
+enable_nvidia_docker: true
+
+zfs_root: /growingboi
+docker_dir: /growingboi/docker
+
+godaddy_hostname: homeboi
+vpn_host: "{{ godaddy_hostname }}.{{ godaddy_domain }}"
+vpn_peers: jordan,elizabeth

@@ -1,5 +1,5 @@
 inventory.*
-vars
-vars/**/*
+vault.yml
+vault/**/*
 **/.DS_Store
 files/torrent/wg0.conf

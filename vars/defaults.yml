@@ -1,0 +1,22 @@
+uid: '1000'
+guid: '1000'
+timezone:  America/New_York
+
+ntp_timezone: '{{ timezone }}'
+node_exporter_version: '1.7.0'
+security_autoupdate_enabled: true
+
+# ports
+node_exporter_http: 9100
+homer_http: 80
+grafana_http: 3000
+unifi_http: 8080
+unifi_https: 8443
+pihole_http: 8081
+speedtest_http: 8083
+qbittorrent_http: 8084
+speedtest_https: 9443
+jellyfin_http: 8096
+syncthing_http: 8384
+cors_http: 3001
+apcupsd_exporter_http: 9162

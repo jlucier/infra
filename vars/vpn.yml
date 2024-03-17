@@ -1,0 +1,5 @@
+username: ubuntu
+docker_dir: '/home/{{ username }}/docker'
+
+vpn_host: "{{ godaddy_hostname }}.{{ godaddy_domain }}"
+vpn_peers: jordan,connor,kevin,elizabeth,homeboi
