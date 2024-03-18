@@ -39,7 +39,7 @@ services:
     image: grafana/grafana:main
     user: "472"
     ports:
-      - "{{ grafana_http }}:{{ grafana_http }}"
+      - "127.0.0.1:{{ grafana_http }}:{{ grafana_http }}"
     environment:
       TZ: "{{ timezone }}"
     volumes:

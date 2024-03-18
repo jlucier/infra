@@ -6,5 +6,6 @@ zfs_root: /growingboi
 docker_dir: /growingboi/docker
 
 godaddy_hostname: homeboi
-vpn_host: "{{ godaddy_hostname }}.{{ godaddy_domain }}"
+dns_name: "{{ godaddy_hostname }}.{{ godaddy_domain }}"
+vpn_host: "{{ dns_name }}"
 vpn_peers: jordan,elizabeth

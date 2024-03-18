@@ -45,7 +45,7 @@
         pull: true
         state: started
         ports:
-          - "{{ pihole_http }}:80"
+          - "127.0.0.1:{{ pihole_http }}:80"
           - "{{ local_ip }}:53:53/tcp"
           - "{{ local_ip }}:53:53/udp"
         env:
@@ -83,8 +83,8 @@
         pull: true
         state: started
         ports:
-          - "{{ unifi_https }}:8443"
-          - "{{ unifi_http }}:8080"
+          - "127.0.0.1:{{ unifi_https }}:8443"
+          - "127.0.0.1:{{ unifi_http }}:8080"
           - 3478:3478/udp
           - 10001:10001/udp
         env:
@@ -122,9 +122,10 @@
           "PUID": "1000"
           "PGID": "1000"
           "APP_KEY": '"{{ speedtesttracker_key }}"'
+          "APP_URL": "http://speedtest.{{ dns_name }}"
         ports:
-          - "{{ speedtest_http }}:80"
-          - "{{ speedtest_https }}:8443"
+          - "127.0.0.1:{{ speedtest_http }}:80"
+          - "127.0.0.1:{{ speedtest_https }}:8443"
         volumes:
           - "{{ docker_dir }}/speedtest:/config"
         restart_policy: unless-stopped

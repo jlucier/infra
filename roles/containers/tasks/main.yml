@@ -1,4 +1,40 @@
 ---
+- name: Nginx proxy
+  tags:
+    - containers
+    - nginx
+    - proxy
+  block:
+    - name: Create nginx folder
+      become: true
+      file:
+        path: "{{ docker_dir }}/nginx"
+        state: directory
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        mode: 0755
+
+    - name: Config file
+      become: true
+      template:
+        src: "files/nginx.conf"
+        dest: "{{ docker_dir }}/nginx/nginx.conf"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+
+    - name: Run nginx container
+      docker_container:
+        name: nginx
+        image: nginx
+        pull: true
+        state: started
+        restart: true
+        networks:
+          - name: host
+        volumes:
+          - "{{ docker_dir }}/nginx/nginx.conf:/etc/nginx/nginx.conf:ro"
+        restart_policy: unless-stopped
+
 - name: Watchtower
   tags:
     - containers
@@ -20,7 +56,7 @@
     pull: true
     image: imjacobclark/cors-container
     ports:
-      - "{{ cors_http }}:3000"
+      - "127.0.0.1:{{ cors_http }}:3000"
     restart_policy: unless-stopped
 
 - name: Jellyfin
@@ -36,7 +72,6 @@
         group: "{{ username }}"
         state: directory
         mode: 0755
-        recurse: true
       with_items:
         - "{{ docker_dir }}/jellyfin/config"
         - "{{ docker_dir }}/jellyfin/cache"
@@ -47,8 +82,8 @@
         image: "jellyfin/jellyfin"
         pull: true
         state: started
-        networks:
-          - name: host
+        ports:
+          - "127.0.0.1:{{ jellyfin_http }}:8096"
         user: "{{ uid }}"
         volumes:
           - "{{ docker_dir }}/jellyfin/config:/config"
@@ -70,7 +105,6 @@
         group: "{{ username }}"
         state: directory
         mode: 0755
-        recurse: true
       with_items:
         - "{{ docker_dir }}/homer"
 
@@ -98,7 +132,7 @@
         pull: true
         state: started
         ports:
-          - "{{ homer_http }}:8080"
+          - "127.0.0.1:{{ homer_http }}:8080"
         user: "{{ uid }}"
         volumes:
           - "{{ docker_dir }}/homer:/www/assets"
