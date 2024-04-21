@@ -62,6 +62,38 @@
           - "/growingboi/media:/media"
         restart_policy: unless-stopped
 
+- name: Lidarr
+  tags:
+    - media
+    - containers
+    - lidarr
+  block:
+    - name: Create folders
+      become: true
+      file:
+        path: "{{ docker_dir }}/lidarr/config"
+        state: directory
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        mode: 0755
+
+    - name: Make sure the container is created and running
+      docker_container:
+        name: lidarr
+        image: lscr.io/linuxserver/lidarr:latest
+        pull: true
+        state: started
+        env:
+          "PUID": "1000"
+          "PGID": "1000"
+          "TZ": "America/New_York"
+        ports:
+          - "127.0.0.1:{{ lidarr_http }}:8686"
+        volumes:
+          - "{{ docker_dir }}/lidarr/config:/config"
+          - "/growingboi/media:/media"
+        restart_policy: unless-stopped
+
 - name: Jellyfin
   tags:
     - containers
