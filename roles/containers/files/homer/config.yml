@@ -42,13 +42,25 @@ colors:
 # First level array represent a group.
 # Leave only a "items" key if not using group (group name, icon & tagstyle are optional, section separation will not be displayed).
 services:
-  - name: "Applications"
-    icon: "fas fa-cloud"
+  - name: "Media"
+    icon: "fas fa-photo-film"
     items:
       - name: "Jellyfin"
         logo: "assets/icons/jellyfin.png"
         url: "http://jellyfin.{{ dns_name }}"
         target: "new"
+      - name: "Radarr"
+        logo: "assets/icons/radarr.png"
+        url: "http://radarr.{{ dns_name }}"
+        target: "new"
+      - name: "Prowlarr"
+        logo: "assets/icons/prowlarr.png"
+        url: "http://prowlarr.{{ dns_name }}"
+        target: "new"
+
+  - name: "Other Apps"
+    icon: "fas fa-cloud"
+    items:
       - name: "Syncthing"
         logo: "assets/icons/syncthing.png"
         url: "http://syncthing.{{ dns_name }}"

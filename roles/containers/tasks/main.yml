@@ -59,39 +59,6 @@
       - "127.0.0.1:{{ cors_http }}:3000"
     restart_policy: unless-stopped
 
-- name: Jellyfin
-  tags:
-    - containers
-    - jellyfin
-  block:
-    - name: Create and chmod folders
-      become: true
-      file:
-        path: "{{ item }}"
-        owner: "{{ username }}"
-        group: "{{ username }}"
-        state: directory
-        mode: 0755
-      with_items:
-        - "{{ docker_dir }}/jellyfin/config"
-        - "{{ docker_dir }}/jellyfin/cache"
-
-    - name: Make sure the Jellyfin container is created and running
-      docker_container:
-        name: jellyfin
-        image: "jellyfin/jellyfin"
-        pull: true
-        state: started
-        ports:
-          - "127.0.0.1:{{ jellyfin_http }}:8096"
-        user: "{{ uid }}"
-        volumes:
-          - "{{ docker_dir }}/jellyfin/config:/config"
-          - "{{ docker_dir }}/jellyfin/cache:/cache"
-          - "/growingboi/media:/media"
-        restart_policy: unless-stopped
-        runtime: nvidia
-
 - name: Homer
   tags:
     - containers
@@ -157,4 +124,5 @@
     restart_policy: unless-stopped
 
 - import_tasks: analytics.yml
+- import_tasks: media.yml
 - import_tasks: network.yml

@@ -22,3 +22,5 @@ speedtest_https: 9443
 jellyfin_http: 8096
 syncthing_http: 8384
 cors_http: 3001
+radarr_http: 7878
+prowlarr_http: 9696

@@ -1,0 +1,97 @@
+---
+- name: Prowlarr
+  tags:
+    - media
+    - containers
+    - prowlarr
+  block:
+    - name: Create folders
+      become: true
+      file:
+        path: "{{ docker_dir }}/prowlarr/config"
+        state: directory
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        mode: 0755
+
+    - name: Make sure the container is created and running
+      docker_container:
+        name: prowlarr
+        image: lscr.io/linuxserver/prowlarr:latest
+        pull: true
+        state: started
+        env:
+          "PUID": "1000"
+          "PGID": "1000"
+          "TZ": "America/New_York"
+        ports:
+          - "127.0.0.1:{{ prowlarr_http }}:9696"
+        volumes:
+          - "{{ docker_dir }}/prowlarr/config:/config"
+        restart_policy: unless-stopped
+
+- name: Radarr
+  tags:
+    - media
+    - containers
+    - radarr
+  block:
+    - name: Create folders
+      become: true
+      file:
+        path: "{{ docker_dir }}/radarr/config"
+        state: directory
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        mode: 0755
+
+    - name: Make sure the container is created and running
+      docker_container:
+        name: radarr
+        image: lscr.io/linuxserver/radarr:latest
+        pull: true
+        state: started
+        env:
+          "PUID": "1000"
+          "PGID": "1000"
+          "TZ": "America/New_York"
+        ports:
+          - "127.0.0.1:{{ radarr_http }}:7878"
+        volumes:
+          - "{{ docker_dir }}/radarr/config:/config"
+          - "/growingboi/media:/media"
+        restart_policy: unless-stopped
+
+- name: Jellyfin
+  tags:
+    - containers
+    - jellyfin
+    - media
+  block:
+    - name: Create and chmod folders
+      become: true
+      file:
+        path: "{{ item }}"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        state: directory
+        mode: 0755
+      with_items:
+        - "{{ docker_dir }}/jellyfin/config"
+        - "{{ docker_dir }}/jellyfin/cache"
+
+    - name: Make sure the Jellyfin container is created and running
+      docker_container:
+        name: jellyfin
+        image: "jellyfin/jellyfin"
+        pull: true
+        state: started
+        ports:
+          - "127.0.0.1:{{ jellyfin_http }}:8096"
+        user: "{{ uid }}"
+        volumes:
+          - "{{ docker_dir }}/jellyfin/config:/config"
+          - "{{ docker_dir }}/jellyfin/cache:/cache"
+          - "/growingboi/media:/media"
+        restart_policy: unless-stopped
+        runtime: nvidia

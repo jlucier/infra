@@ -10,7 +10,7 @@ services:
     network_mode: service:torrentvpn
     volumes:
       - "{{ docker_dir }}/qbittorrent/config:/config"
-      - "/growingboi/media/qbit_downloads:/downloads"
+      - "/growingboi/media:/media"
     restart: unless-stopped
 
   torrentvpn:
@@ -26,5 +26,5 @@ services:
     volumes:
       - "{{ docker_dir }}/qbittorrent/wg0.conf:/config/wg0.conf"
     ports:
-      - {{ qbittorrent_http }}:{{ qbittorrent_http }}
+      - 127.0.0.1:{{ qbittorrent_http }}:{{ qbittorrent_http }}
     restart: unless-stopped
