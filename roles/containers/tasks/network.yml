@@ -115,7 +115,7 @@
     - name: Run speedtest tracker
       docker_container:
         name: speedtesttracker
-        image: "ghcr.io/alexjustesen/speedtest-tracker"
+        image: "lscr.io/linuxserver/speedtest-tracker"
         pull: true
         state: started
         env:
