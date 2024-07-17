@@ -49,7 +49,7 @@
           - "{{ local_ip }}:53:53/tcp"
           - "{{ local_ip }}:53:53/udp"
         env:
-          TZ: "America/New_York"
+          TZ: "{{ timezone }}"
           VIRTUAL_HOST: "pi.hole"
           PROXY_LOCATION: "pi.hole"
           FTLCONF_LOCAL_IPV4: "{{ local_ip }}"
@@ -88,7 +88,7 @@
           - 3478:3478/udp
           - 10001:10001/udp
         env:
-          "TZ": "America/New_York"
+          "TZ": "{{ timezone }}"
           "PUID": "1000"
           "PGID": "1000"
         volumes:
@@ -123,6 +123,10 @@
           "PGID": "1000"
           "APP_KEY": '"{{ speedtesttracker_key }}"'
           "APP_URL": "http://speedtest.{{ dns_name }}"
+          "SPEEDTEST_SCHEDULE": "*/15 * * * *"
+          "SPEEDTEST_SERVERS": "1774,13429,49814"
+          "PRUNE_RESULTS_OLDER_THAN": "30"
+          "DISPLAY_TIMEZONE": "{{ timezone }}"
         ports:
           - "127.0.0.1:{{ speedtest_http }}:80"
           - "127.0.0.1:{{ speedtest_https }}:8443"
