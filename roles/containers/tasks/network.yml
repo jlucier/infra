@@ -79,14 +79,13 @@
     - name: Install Unifi Controller
       docker_container:
         name: unifi
-        image: "linuxserver/unifi-controller"
+        image: "jacobalberty/unifi"
         pull: true
         state: started
         ports:
-          - "127.0.0.1:{{ unifi_https }}:8443"
-          - "127.0.0.1:{{ unifi_http }}:8080"
+          - "{{ unifi_https }}:8443"
+          - "{{ unifi_http }}:8080"
           - 3478:3478/udp
-          - 10001:10001/udp
         env:
           "TZ": "{{ timezone }}"
           "PUID": "1000"
