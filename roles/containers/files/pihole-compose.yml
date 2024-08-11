@@ -1,0 +1,27 @@
+services:
+  pihole:
+    container_name: pihole
+    image: "pihole/pihole"
+    hostname: "pi.hole"
+    volumes:
+      - "{{ docker_dir }}/pihole/etc-pihole:/etc/pihole"
+      - "{{ docker_dir }}/pihole/etc-dnsmasq.d:/etc/dnsmasq.d"
+    restart: unless-stopped
+    environment:
+      TZ: "{{ timezone }}"
+      VIRTUAL_HOST: "pi.hole"
+      PROXY_LOCATION: "pi.hole"
+      FTLCONF_LOCAL_IPV4: "{{ local_ip }}"
+    ports:
+      - "127.0.0.1:{{ pihole_http }}:80"
+      - "{{ local_ip }}:53:53/tcp"
+      - "{{ local_ip }}:53:53/udp"
+
+  orbital-sync:
+    container_name: orbital-sync
+    image: "mattwebbio/orbital-sync:latest"
+    environment:
+      PRIMARY_HOST_BASE_URL: "http://pihole"
+      PRIMARY_HOST_PASSWORD: "{{ pihole_password }}"
+      SECONDARY_HOSTS_1_BASE_URL: "http://{{ failhole_ip }}"
+      SECONDARY_HOSTS_1_PASSWORD: "{{ pihole_password }}"

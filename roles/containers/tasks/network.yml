@@ -38,26 +38,18 @@
         dest: /etc/resolv.conf
         state: link
 
-    - name: Make sure the Pi-hole container is created and running
-      docker_container:
-        name: pihole
-        image: "pihole/pihole"
-        pull: true
-        state: started
-        ports:
-          - "127.0.0.1:{{ pihole_http }}:80"
-          - "{{ local_ip }}:53:53/tcp"
-          - "{{ local_ip }}:53:53/udp"
-        env:
-          TZ: "{{ timezone }}"
-          VIRTUAL_HOST: "pi.hole"
-          PROXY_LOCATION: "pi.hole"
-          FTLCONF_LOCAL_IPV4: "{{ local_ip }}"
-        hostname: "pi.hole"
-        volumes:
-          - "{{ docker_dir }}/pihole/etc-pihole:/etc/pihole"
-          - "{{ docker_dir }}/pihole/etc-dnsmasq.d:/etc/dnsmasq.d"
-        restart_policy: unless-stopped
+    - name: Sync compose file
+      become: true
+      template:
+        src: files/pihole-compose.yml
+        dest: "{{ docker_dir }}/pihole/docker-compose.yml"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        mode: 0600
+
+    - name: Run pihole compose file
+      community.docker.docker_compose_v2:
+        project_src: "{{ docker_dir }}/pihole"
 
 - name: Unifi Controller
   tags:

@@ -1,3 +1,0 @@
-username: jordan
-local_ip: "{{ brix_ip }}"
-docker_dir: ~/docker

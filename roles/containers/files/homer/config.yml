@@ -100,8 +100,8 @@ services:
         logo: "assets/icons/pihole.png"
         type: PiHole
         apikey: "{{ pihole_apikey }}"
-        url: "http://brix.lan:{{ pihole_http }}/admin/"
-        endpoint: "http://cors.{{ dns_name }}/http://brix.lan:{{ pihole_http }}/admin/"
+        url: "http://failhole.lan/admin/"
+        endpoint: "http://cors.{{ dns_name }}/http://failhole.lan/admin/"
         target: "new"
 
   - name: "Analytics"
