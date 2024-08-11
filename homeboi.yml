@@ -1,4 +1,4 @@
-- name: Initial server setup
+- name: Homeboi server
   hosts: homeboi
   vars_files:
     - vars/defaults.yml
@@ -31,15 +31,6 @@
       become: yes
       tags:
         - system
-
-    - role: roles/vpn
-      become: yes
-      tags:
-        - wireguard
-
-    - role: roles/ddns
-      tags:
-        - ddns
 
     - role: roles/backup
       become: yes
