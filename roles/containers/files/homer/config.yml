@@ -81,9 +81,9 @@ services:
   - name: "Network"
     icon: "fas fa-network-wired"
     items:
-      - name: "EdgeOS"
-        logo: "assets/icons/edge.png"
-        url: "https://edge.lan"
+      - name: "OPNsense"
+        logo: "assets/icons/opnsense.png"
+        url: "https://192.168.13.1"
         target: "new"
       - name: "UniFi"
         logo: "assets/icons/unifi.svg"
