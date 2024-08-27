@@ -85,7 +85,7 @@ services:
     icon: "fas fa-network-wired"
     items:
       - name: "UniFi"
-        logo: "assets/icons/unifi.svg"
+        logo: "assets/icons/unifi.png"
         url: "https://router.lan"
         target: "new"
       - name: "Pi-hole (main)"
