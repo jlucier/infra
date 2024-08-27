@@ -45,3 +45,8 @@
     - role: roles/containers
     - role: roles/torrent
     - role: roles/gameservers
+
+    - role: ddns
+      become: yes
+      tags:
+        - ddns

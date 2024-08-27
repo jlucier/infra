@@ -5,4 +5,5 @@ enable_nvidia_docker: true
 zfs_root: /growingboi
 docker_dir: /growingboi/docker
 
-dns_name: "homeboi.jordan.{{ godaddy_domain }}"
+godaddy_hostname: jordan
+dns_name: "homeboi.{{ godaddy_hostname }}.{{ godaddy_domain }}"

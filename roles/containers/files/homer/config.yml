@@ -84,13 +84,9 @@ services:
   - name: "Network"
     icon: "fas fa-network-wired"
     items:
-      - name: "OPNsense"
-        logo: "assets/icons/opnsense.png"
-        url: "https://router.lan"
-        target: "new"
       - name: "UniFi"
         logo: "assets/icons/unifi.svg"
-        url: "https://unifi.{{ dns_name }}"
+        url: "https://router.lan"
         target: "new"
       - name: "Pi-hole (main)"
         type: PiHole

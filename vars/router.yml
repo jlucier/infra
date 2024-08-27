@@ -1,2 +1,0 @@
-godaddy_hostname: jordan
-dns_name: "{{ godaddy_hostname }}.{{ godaddy_domain }}"
