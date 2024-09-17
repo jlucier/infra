@@ -1,5 +1,4 @@
 ---
-
 - name: Satisfactory
   tags:
     - containers
@@ -29,10 +28,9 @@
         hostname: satisfactory-server
         ports:
           - "{{ local_ip }}:7777:7777/udp"
-          - "{{ local_ip }}:15000:15000/udp"
-          - "{{ local_ip }}:15777:15777/udp"
+          - "{{ local_ip }}:7777:7777/tcp"
         env:
-          MAXPLAYERS: "4"
+          MAXPLAYERS: "2"
           PGID: "1000"
           PUID: "1000"
           ROOTLESS: "false"
