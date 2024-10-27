@@ -23,5 +23,6 @@ jellyfin_http: 8096
 syncthing_http: 8384
 cors_http: 3001
 radarr_http: 7878
+sonarr_http: 8989
 lidarr_http: 8686
 prowlarr_http: 9696

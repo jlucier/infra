@@ -94,6 +94,38 @@
           - "/growingboi/media:/media"
         restart_policy: unless-stopped
 
+- name: Sonarr
+  tags:
+    - media
+    - containers
+    - sonarr
+  block:
+    - name: Create folders
+      become: true
+      file:
+        path: "{{ docker_dir }}/sonarr/config"
+        state: directory
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        mode: 0755
+
+    - name: Make sure the container is created and running
+      docker_container:
+        name: sonarr
+        image: lscr.io/linuxserver/sonarr:latest
+        pull: true
+        state: started
+        env:
+          "PUID": "1000"
+          "PGID": "1000"
+          "TZ": "America/New_York"
+        ports:
+          - "127.0.0.1:{{ sonarr_http }}:8989"
+        volumes:
+          - "{{ docker_dir }}/sonarr/config:/config"
+          - "/growingboi/media:/media"
+        restart_policy: unless-stopped
+
 - name: Jellyfin
   tags:
     - containers
