@@ -5,6 +5,11 @@
     - ddns
   become: true
   block:
+    - name: Ensure cron installed
+      apt:
+        name: cron
+        state: latest
+
     - name: Install the DDNS script
       template:
         src: "files/gdddns.j2"
