@@ -58,6 +58,7 @@ services:
         logo: "assets/icons/sonarr.png"
         url: "http://sonarr.{{ dns_name }}"
         apikey: "{{ sonarr_api_key }}"
+        target: "new"
       - name: "Lidarr"
         logo: "assets/icons/lidarr.png"
         url: "http://lidarr.{{ dns_name }}"
