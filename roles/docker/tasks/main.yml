@@ -44,13 +44,18 @@
         - docker-compose-plugin
         - docker-compose
 
+    - name: Start + enable Docker
+      ansible.builtin.systemd_service:
+        name: docker
+        state: started
+        enabled: true
+
 - name: Add user '{{ username }}' to docker group
   tags: docker
   user:
-    name: '{{ username }}'
+    name: "{{ username }}"
     groups: docker
     append: yes
-
 
 - name: Nvidia Docker
   tags: nvidia-docker
@@ -67,7 +72,7 @@
       template:
         src: files/libnvidia-container.list.j2
         dest: /etc/apt/sources.list.d/nvidia-container-toolkit.list
-        mode: '0644'
+        mode: "0644"
 
     - name: Install nvidia-docker
       apt:
