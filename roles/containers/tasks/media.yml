@@ -156,6 +156,7 @@
         volumes:
           - "{{ docker_dir }}/jellyfin/config:/config"
           - "{{ docker_dir }}/jellyfin/cache:/cache"
+          - "/home/{{ username }}/jellyfin_transcodes:/transcodes"
           - "/growingboi/media:/media"
         restart_policy: unless-stopped
         runtime: nvidia
