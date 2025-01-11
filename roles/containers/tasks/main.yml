@@ -120,7 +120,9 @@
     networks:
       - name: host
     volumes:
-      - "/growingboi/storage/syncthing:/var/syncthing"
+      - "/growingboi/docker/syncthing:/var/syncthing"
+      - "/growingboi/storage/sync:/sync"
+      - "/growingboi/media/:/media"
     restart_policy: unless-stopped
 
 - import_tasks: analytics.yml
