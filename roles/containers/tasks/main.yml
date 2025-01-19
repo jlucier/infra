@@ -120,7 +120,7 @@
     networks:
       - name: host
     volumes:
-      - "/growingboi/docker/syncthing:/var/syncthing"
+      - "{{ docker_dir }}/syncthing:/var/syncthing"
       - "/growingboi/storage/sync:/sync"
       - "/growingboi/media/:/media"
     restart_policy: unless-stopped

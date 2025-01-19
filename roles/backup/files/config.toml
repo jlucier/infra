@@ -19,7 +19,7 @@ fs = "growingboi/storage"
 repo = "{{ gb_storage_repo }}"
 
 [fs.docker]
-fs = "growingboi/docker"
+fs = "fastboi/docker"
 repo = "{{ gb_docker_repo }}"
 exclude = [
   "wireguard",

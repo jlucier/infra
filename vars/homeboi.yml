@@ -2,8 +2,7 @@ username: jordan
 local_ip: "{{ homeboi_ip }}"
 enable_nvidia_docker: true
 
-zfs_root: /growingboi
-docker_dir: /growingboi/docker
+docker_dir: /fastboi/docker
 
 godaddy_hostname: jordan
 dns_name: "homeboi.{{ godaddy_hostname }}.{{ godaddy_domain }}"

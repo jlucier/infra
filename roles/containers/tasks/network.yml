@@ -51,41 +51,6 @@
       community.docker.docker_compose_v2:
         project_src: "{{ docker_dir }}/pihole"
 
-- name: Unifi Controller
-  tags:
-    - containers
-    - unifi
-  block:
-    - name: Create and chmod folders
-      become: true
-      file:
-        path: "{{ item }}"
-        owner: "{{ username }}"
-        group: "{{ username }}"
-        state: directory
-        mode: 0755
-        recurse: true
-      with_items:
-        - "{{ docker_dir }}/unifi"
-
-    - name: Install Unifi Controller
-      docker_container:
-        name: unifi
-        image: "jacobalberty/unifi"
-        pull: true
-        state: started
-        ports:
-          - "{{ unifi_https }}:8443"
-          - "{{ unifi_http }}:8080"
-          - 3478:3478/udp
-        env:
-          "TZ": "{{ timezone }}"
-          "PUID": "1000"
-          "PGID": "1000"
-        volumes:
-          - "{{ docker_dir }}/unifi:/config"
-        restart_policy: unless-stopped
-
 - name: SpeedtestTracker
   tags:
     - containers
