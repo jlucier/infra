@@ -1,5 +1,7 @@
 #! /usr/bin/env python3.11
 
+# NOTE: make sure permission for snapshotting is allowed on pools
+
 import argparse
 import logging
 import os
@@ -37,9 +39,14 @@ def failexit(reason: str):
 
 
 def execute(cmd: str):
-    return subprocess.check_output(
-        shlex.split(cmd), text=True, stderr=subprocess.STDOUT
-    )
+    try:
+        return subprocess.check_output(
+            shlex.split(cmd), text=True, stderr=subprocess.STDOUT
+        )
+    except subprocess.CalledProcessError as e:
+        logger.exception(f"Failed call: {cmd} = {e.returncode}\n{e.output}")
+        raise
+        
 
 
 def borg_cmd(cmd: str, env: dict | None = None, check: bool = True, **kwargs):
