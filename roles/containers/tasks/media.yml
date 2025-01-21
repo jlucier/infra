@@ -59,7 +59,7 @@
           - "127.0.0.1:{{ radarr_http }}:7878"
         volumes:
           - "{{ docker_dir }}/radarr/config:/config"
-          - "/growingboi/media:/media"
+          - "/bigboi/media:/media"
         restart_policy: unless-stopped
 
 - name: Lidarr
@@ -91,7 +91,7 @@
           - "127.0.0.1:{{ lidarr_http }}:8686"
         volumes:
           - "{{ docker_dir }}/lidarr/config:/config"
-          - "/growingboi/media:/media"
+          - "/bigboi/media:/media"
         restart_policy: unless-stopped
 
 - name: Sonarr
@@ -123,7 +123,7 @@
           - "127.0.0.1:{{ sonarr_http }}:8989"
         volumes:
           - "{{ docker_dir }}/sonarr/config:/config"
-          - "/growingboi/media:/media"
+          - "/bigboi/media:/media"
         restart_policy: unless-stopped
 
 - name: Jellyfin
@@ -157,6 +157,6 @@
           - "{{ docker_dir }}/jellyfin/config:/config"
           - "{{ docker_dir }}/jellyfin/cache:/cache"
           - "/home/{{ username }}/jellyfin_transcodes:/transcodes"
-          - "/growingboi/media:/media"
+          - "/bigboi/media:/media"
         restart_policy: unless-stopped
         runtime: nvidia

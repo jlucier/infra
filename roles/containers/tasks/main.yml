@@ -121,8 +121,8 @@
       - name: host
     volumes:
       - "{{ docker_dir }}/syncthing:/var/syncthing"
-      - "/growingboi/storage/sync:/sync"
-      - "/growingboi/media/:/media"
+      - "/bigboi/storage/sync:/sync"
+      - "/bigboi/media/:/media"
     restart_policy: unless-stopped
 
 - import_tasks: analytics.yml

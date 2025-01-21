@@ -2,4 +2,4 @@ inventory.*
 vault.yml
 vault/**/*
 **/.DS_Store
-files/torrent/wg0.conf
+**/wg0.conf

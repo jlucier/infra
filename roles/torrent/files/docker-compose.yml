@@ -10,7 +10,7 @@ services:
     network_mode: service:torrentvpn
     volumes:
       - "{{ docker_dir }}/qbittorrent/config:/config"
-      - "/growingboi/media:/media"
+      - "/bigboi/media:/media"
     restart: unless-stopped
 
   torrentvpn:

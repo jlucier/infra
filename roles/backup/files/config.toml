@@ -15,7 +15,7 @@ week = 4
 month = 6
 
 [fs.storage]
-fs = "growingboi/storage"
+fs = "bigboi/storage"
 repo = "{{ gb_storage_repo }}"
 
 [fs.docker]
