@@ -14,10 +14,6 @@ day = 7
 week = 4
 month = 6
 
-[fs.storage]
-fs = "bigboi/storage"
-repo = "{{ gb_storage_repo }}"
-
 [fs.docker]
 fs = "fastboi/docker"
 repo = "{{ gb_docker_repo }}"
@@ -25,3 +21,7 @@ exclude = [
   "wireguard",
   "grafana",
 ]
+
+[fs.storage]
+fs = "bigboi/storage"
+repo = "{{ gb_storage_repo }}"

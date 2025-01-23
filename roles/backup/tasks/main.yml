@@ -6,6 +6,8 @@
     url: https://github.com/borgbackup/borg/releases/download/2.0.0b6/borg-linux64
     dest: /usr/local/bin/borg
     mode: 775
+    owner: root
+    group: root
 
 - name: Install python3.11
   tags:

@@ -46,7 +46,6 @@ def execute(cmd: str):
     except subprocess.CalledProcessError as e:
         logger.exception(f"Failed call: {cmd} = {e.returncode}\n{e.output}")
         raise
-        
 
 
 def borg_cmd(cmd: str, env: dict | None = None, check: bool = True, **kwargs):
