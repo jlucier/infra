@@ -1,0 +1,13 @@
+---
+- name: Run IT Tools
+  tags:
+    - containers
+    - it-tools
+  docker_container:
+    name: it-tools
+    image: corentinth/it-tools
+    state: started
+    pull: true
+    restart_policy: unless-stopped
+    ports:
+      - "127.0.0.1:{{ it_tools_http }}:80"

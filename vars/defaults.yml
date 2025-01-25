@@ -13,8 +13,6 @@ apcupsd_exporter_http: 9162
 # container ports
 homer_http: 8080
 grafana_http: 3000
-unifi_http: 8085
-unifi_https: 8443
 pihole_http: 8081
 qbittorrent_http: 8084
 speedtest_http: 8083
@@ -26,3 +24,4 @@ radarr_http: 7878
 sonarr_http: 8989
 lidarr_http: 8686
 prowlarr_http: 9696
+it_tools_http: 8085
