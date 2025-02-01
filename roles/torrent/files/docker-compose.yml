@@ -29,7 +29,7 @@ services:
       proxy:
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.qbittorrent.rule=Host(`qbittorrent.{{ dns_name }}`)"
+      - "traefik.http.routers.qbittorrent.rule=Host(`qbit.{{ dns_name }}`)"
       - "traefik.http.services.qbittorrent.loadbalancer.server.port=8080"
       - "traefik.http.routers.qbittorrent.entrypoints=https"
       - "traefik.http.routers.qbittorrent.tls.certresolver=godaddy"
