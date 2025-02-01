@@ -6,7 +6,6 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=America/New_York
-      - WEBUI_PORT={{ qbittorrent_http }}
     network_mode: service:torrentvpn
     volumes:
       - "{{ docker_dir }}/qbittorrent/config:/config"
@@ -25,6 +24,16 @@ services:
       - PGID=1000
     volumes:
       - "{{ docker_dir }}/qbittorrent/wg0.conf:/config/wg0.conf"
-    ports:
-      - 127.0.0.1:{{ qbittorrent_http }}:{{ qbittorrent_http }}
     restart: unless-stopped
+    networks:
+      proxy:
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.qbittorrent.rule=Host(`qbittorrent.{{ dns_name }}`)"
+      - "traefik.http.services.qbittorrent.loadbalancer.server.port=8080"
+      - "traefik.http.routers.qbittorrent.entrypoints=https"
+      - "traefik.http.routers.qbittorrent.tls.certresolver=godaddy"
+
+networks:
+  proxy:
+    external: true

@@ -1,0 +1,45 @@
+services:
+  traefik:
+    container_name: traefik
+    image: "traefik:latest"
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      proxy:
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - "{{ docker_dir }}/traefik/traefik.yml:/traefik.yaml:ro"
+      - "{{ docker_dir }}/traefik/acme.json:/acme.json"
+      - "{{ docker_dir }}/traefik/logs:/var/log/traefik"
+    environment:
+      GODADDY_API_KEY: "{{ godaddy_api_key }}"
+      GODADDY_API_SECRET: "{{ godaddy_api_secret }}"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.entrypoints=http"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.{{ dns_name }}`)"
+      - "traefik.http.middlewares.traefik-auth.basicauth.users={{ traefik_dashboard_credentials }}"
+      - "traefik.http.middlewares.traefik-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.sslheader.headers.customrequestheaders.X-Forwarded-Proto=https"
+      - "traefik.http.routers.traefik.middlewares=traefik-https-redirect"
+      - "traefik.http.routers.traefik-secure.entrypoints=https"
+      - "traefik.http.routers.traefik-secure.rule=Host(`traefik.{{ dns_name }}`)"
+      - "traefik.http.routers.traefik-secure.middlewares=traefik-auth"
+      - "traefik.http.routers.traefik-secure.tls=true"
+      - "traefik.http.routers.traefik-secure.tls.certresolver=godaddy"
+      - "traefik.http.routers.traefik-secure.tls.domains[0].main={{ dns_name}}"
+      - "traefik.http.routers.traefik-secure.tls.domains[0].sans=*.{{ dns_name}}"
+      - "traefik.http.routers.traefik-secure.service=api@internal"
+    extra_hosts:
+      # allows traefik to reach back to host network for synching or other services
+      # in host network mode
+      - "host.docker.internal:host-gateway"
+
+networks:
+  proxy:
+    name: proxy

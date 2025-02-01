@@ -24,11 +24,16 @@
           "PUID": "1000"
           "PGID": "1000"
           "TZ": "America/New_York"
-        ports:
-          - "127.0.0.1:{{ prowlarr_http }}:9696"
         volumes:
           - "{{ docker_dir }}/prowlarr/config:/config"
         restart_policy: unless-stopped
+        networks:
+          - name: proxy
+        labels:
+          traefik.enable: "true"
+          traefik.http.routers.prowlarr.rule: "Host(`prowlarr.{{ dns_name }}`)"
+          traefik.http.routers.prowlarr.entrypoints: "https"
+          traefik.http.routers.prowlarr.tls.certresolver: "godaddy"
 
 - name: Radarr
   tags:
@@ -55,12 +60,17 @@
           "PUID": "1000"
           "PGID": "1000"
           "TZ": "America/New_York"
-        ports:
-          - "127.0.0.1:{{ radarr_http }}:7878"
         volumes:
           - "{{ docker_dir }}/radarr/config:/config"
           - "/bigboi/media:/media"
         restart_policy: unless-stopped
+        networks:
+          - name: proxy
+        labels:
+          traefik.enable: "true"
+          traefik.http.routers.radarr.rule: "Host(`radarr.{{ dns_name }}`)"
+          traefik.http.routers.radarr.entrypoints: "https"
+          traefik.http.routers.radarr.tls.certresolver: "godaddy"
 
 - name: Lidarr
   tags:
@@ -87,12 +97,17 @@
           "PUID": "1000"
           "PGID": "1000"
           "TZ": "America/New_York"
-        ports:
-          - "127.0.0.1:{{ lidarr_http }}:8686"
         volumes:
           - "{{ docker_dir }}/lidarr/config:/config"
           - "/bigboi/media:/media"
         restart_policy: unless-stopped
+        networks:
+          - name: proxy
+        labels:
+          traefik.enable: "true"
+          traefik.http.routers.lidarr.rule: "Host(`lidarr.{{ dns_name }}`)"
+          traefik.http.routers.lidarr.entrypoints: "https"
+          traefik.http.routers.lidarr.tls.certresolver: "godaddy"
 
 - name: Sonarr
   tags:
@@ -119,12 +134,17 @@
           "PUID": "1000"
           "PGID": "1000"
           "TZ": "America/New_York"
-        ports:
-          - "127.0.0.1:{{ sonarr_http }}:8989"
         volumes:
           - "{{ docker_dir }}/sonarr/config:/config"
           - "/bigboi/media:/media"
         restart_policy: unless-stopped
+        networks:
+          - name: proxy
+        labels:
+          traefik.enable: "true"
+          traefik.http.routers.sonarr.rule: "Host(`sonarr.{{ dns_name }}`)"
+          traefik.http.routers.sonarr.entrypoints: "https"
+          traefik.http.routers.sonarr.tls.certresolver: "godaddy"
 
 - name: Jellyfin
   tags:
@@ -150,13 +170,17 @@
         image: "jellyfin/jellyfin"
         pull: true
         state: started
-        ports:
-          - "127.0.0.1:{{ jellyfin_http }}:8096"
         user: "{{ uid }}"
         volumes:
           - "{{ docker_dir }}/jellyfin/config:/config"
           - "{{ docker_dir }}/jellyfin/cache:/cache"
-          - "/home/{{ username }}/jellyfin_transcodes:/transcodes"
           - "/bigboi/media:/media"
         restart_policy: unless-stopped
         runtime: nvidia
+        networks:
+          - name: proxy
+        labels:
+          traefik.enable: "true"
+          traefik.http.routers.jellyfin.rule: "Host(`jellyfin.{{ dns_name }}`)"
+          traefik.http.routers.jellyfin.entrypoints: "https"
+          traefik.http.routers.jellyfin.tls.certresolver: "godaddy"

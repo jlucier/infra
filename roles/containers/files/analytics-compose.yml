@@ -16,15 +16,19 @@ services:
       - "{{ docker_dir }}/prometheus/etc:/etc/prometheus"
       - "{{ docker_dir }}/prometheus:/prometheus"
     restart: unless-stopped
+    networks:
+      analytics:
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
   cadvisor:
     container_name: cadvisor
     image: gcr.io/cadvisor/cadvisor
-    privileged: yes
+    privileged: true
     devices:
       - /dev/kmsg
+    networks:
+      analytics:
     volumes:
       - "{{ docker_dir }}/grafana:/var/lib/grafana"
       - /:/rootfs:ro
@@ -38,10 +42,21 @@ services:
     container_name: grafana
     image: grafana/grafana:main
     user: "472"
-    ports:
-      - "127.0.0.1:{{ grafana_http }}:{{ grafana_http }}"
     environment:
       TZ: "{{ timezone }}"
     volumes:
       - "{{ docker_dir }}/grafana:/var/lib/grafana"
     restart: unless-stopped
+    networks:
+      analytics:
+      proxy:
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.grafana.rule=Host(`grafana.{{ dns_name }}`)"
+      - "traefik.http.routers.grafana.entrypoints=https"
+      - "traefik.http.routers.grafana.tls.certresolver=godaddy"
+
+networks:
+  analytics:
+  proxy:
+    external: true

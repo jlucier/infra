@@ -1,39 +1,44 @@
 ---
-- name: Nginx proxy
+- name: Traefik proxy
   tags:
     - containers
-    - nginx
+    - traefik
     - proxy
   block:
-    - name: Create nginx folder
+    - name: Create traefik folder
       become: true
       file:
-        path: "{{ docker_dir }}/nginx"
+        path: "{{ docker_dir }}/traefik"
         state: directory
         owner: "{{ username }}"
         group: "{{ username }}"
         mode: 0755
 
-    - name: Config file
-      become: true
+    - name: Create acme.json
+      file:
+        path: "{{ docker_dir }}/traefik/acme.json"
+        state: touch
+        modification_time: preserve
+        access_time: preserve
+        mode: 0600
+
+    - name: Template config file
       template:
-        src: "files/nginx.conf"
-        dest: "{{ docker_dir }}/nginx/nginx.conf"
+        src: "files/traefik/traefik.yml"
+        dest: "{{ docker_dir }}/traefik/traefik.yml"
         owner: "{{ username }}"
         group: "{{ username }}"
 
-    - name: Run nginx container
-      docker_container:
-        name: nginx
-        image: nginx
-        pull: true
-        state: started
-        restart: true
-        networks:
-          - name: host
-        volumes:
-          - "{{ docker_dir }}/nginx/nginx.conf:/etc/nginx/nginx.conf:ro"
-        restart_policy: unless-stopped
+    - name: Template compose file
+      template:
+        src: "files/traefik/docker-compose.yml"
+        dest: "{{ docker_dir }}/traefik/docker-compose.yml"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+
+    - name: Run traefik compose
+      community.docker.docker_compose_v2:
+        project_src: "{{ docker_dir }}/traefik"
 
 - name: Watchtower
   tags:
@@ -55,9 +60,15 @@
     name: cors
     pull: true
     image: imjacobclark/cors-container
-    ports:
-      - "127.0.0.1:{{ cors_http }}:3000"
     restart_policy: unless-stopped
+    networks:
+      - name: proxy
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.cors.rule: "Host(`cors.{{ dns_name }}`)"
+      traefik.http.routers.cors.entrypoints: "https"
+      # traefik.http.services.cors.loadbalancer.server.port: "3000"
+      traefik.http.routers.cors.tls.certresolver: "godaddy"
 
 - name: Homer
   tags:
@@ -98,12 +109,17 @@
         image: "b4bz/homer"
         pull: true
         state: started
-        ports:
-          - "127.0.0.1:{{ homer_http }}:8080"
+        restart_policy: unless-stopped
         user: "{{ uid }}"
         volumes:
           - "{{ docker_dir }}/homer:/www/assets"
-        restart_policy: unless-stopped
+        networks:
+          - name: proxy
+        labels:
+          traefik.enable: "true"
+          traefik.http.routers.homer.rule: "Host(`{{ dns_name }}`)"
+          traefik.http.routers.homer.entrypoints: "https"
+          traefik.http.routers.homer.tls.certresolver: "godaddy"
 
 - name: Syncthing
   tags:
@@ -114,6 +130,7 @@
     image: "syncthing/syncthing"
     pull: true
     state: started
+    restart_policy: unless-stopped
     env:
       "PUID": "1000"
       "PGID": "1000"
@@ -123,9 +140,31 @@
       - "{{ docker_dir }}/syncthing:/var/syncthing"
       - "/bigboi/storage/sync:/sync"
       - "/bigboi/media/:/media"
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.syncthing.rule: "Host(`syncthing.{{ dns_name }}`)"
+      traefik.http.services.syncthing.loadbalancer.server.port: "8384"
+      traefik.http.routers.syncthing.entrypoints: "https"
+      traefik.http.routers.syncthing.tls.certresolver: "godaddy"
+
+- name: Run IT Tools
+  tags:
+    - containers
+    - it-tools
+  docker_container:
+    name: it-tools
+    image: corentinth/it-tools
+    state: started
+    pull: true
     restart_policy: unless-stopped
+    networks:
+      - name: proxy
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.it-tools.rule: "Host(`it-tools.{{ dns_name }}`)"
+      traefik.http.routers.it-tools.entrypoints: "https"
+      traefik.http.routers.it-tools.tls.certresolver: "godaddy"
 
 - import_tasks: analytics.yml
 - import_tasks: media.yml
 - import_tasks: network.yml
-- import_tasks: misc.yml

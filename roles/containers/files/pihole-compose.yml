@@ -12,10 +12,18 @@ services:
       VIRTUAL_HOST: "pi.hole"
       PROXY_LOCATION: "pi.hole"
       FTLCONF_LOCAL_IPV4: "{{ local_ip }}"
+    networks:
+      pihole:
+      proxy:
     ports:
-      - "127.0.0.1:{{ pihole_http }}:80"
-      - "{{ local_ip }}:53:53/tcp"
-      - "{{ local_ip }}:53:53/udp"
+      - "53:53/tcp"
+      - "53:53/udp"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pihole.rule=Host(`pihole.{{ dns_name }}`)"
+      - "traefik.http.services.pihole.loadbalancer.server.port=80"
+      - "traefik.http.routers.pihole.entrypoints=https"
+      - "traefik.http.routers.pihole.tls.certresolver=godaddy"
 
   orbital-sync:
     container_name: orbital-sync
@@ -25,3 +33,10 @@ services:
       PRIMARY_HOST_PASSWORD: "{{ pihole_password }}"
       SECONDARY_HOSTS_1_BASE_URL: "http://{{ failhole_ip }}"
       SECONDARY_HOSTS_1_PASSWORD: "{{ pihole_password }}"
+    networks:
+      pihole:
+
+networks:
+  pihole:
+  proxy:
+    external: true
