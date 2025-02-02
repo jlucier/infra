@@ -1,0 +1,16 @@
+- resources:
+    cpu: true
+    memory: true
+    cputemp: true
+    uptime: true
+    disk: /
+
+- openweathermap:
+    label: Somerville
+    latitude: 42.39605
+    longitude: -71.11123
+    units: imperial
+    provider: openweathermap
+    cache: 5 # Time in minutes to cache API responses, to stay within limits
+    format: # optional, Intl.NumberFormat options
+      maximumFractionDigits: 1

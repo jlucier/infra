@@ -67,59 +67,57 @@
       traefik.enable: "true"
       traefik.http.routers.cors.rule: "Host(`cors.{{ dns_name }}`)"
       traefik.http.routers.cors.entrypoints: "https"
-      # traefik.http.services.cors.loadbalancer.server.port: "3000"
       traefik.http.routers.cors.tls.certresolver: "godaddy"
 
-- name: Homer
+- name: Homepage
   tags:
     - containers
-    - homer
+    - homepage
   block:
     - name: Create and chmod folders
       become: true
       file:
-        path: "{{ item }}"
+        path: "{{ docker_dir }}/homepage"
         owner: "{{ username }}"
         group: "{{ username }}"
         state: directory
         mode: 0755
-      with_items:
-        - "{{ docker_dir }}/homer"
 
-    - name: Homer icons
-      copy:
-        src: "files/homer/icons"
-        dest: "{{ docker_dir }}/homer/"
-        owner: "{{ username }}"
-        group: "{{ username }}"
-        mode: 0755
-      notify: restart homer
+    - name: Homepage images
+      synchronize:
+        src: "files/homepage/images"
+        dest: "{{ docker_dir }}/homepage/images/"
+      notify: restart homepage
 
-    - name: Homer config
+    - name: Homepage config
       template:
-        src: "files/homer/config.yml"
-        dest: "{{ docker_dir }}/homer/"
+        src: "{{ item }}"
+        dest: "{{ docker_dir }}/homepage/config/"
         owner: "{{ username }}"
         group: "{{ username }}"
-        mode: 0755
+      with_fileglob:
+        - "files/homepage/config/*.yaml"
 
-    - name: Make sure the Homer container is created and running
+    - name: Make sure the Homepage container is created and running
       docker_container:
-        name: homer
-        image: "b4bz/homer"
+        name: homepage
+        image: "ghcr.io/gethomepage/homepage"
         pull: true
         state: started
         restart_policy: unless-stopped
-        user: "{{ uid }}"
+        env:
+          PUID: "{{ uid }}"
+          PGID: "{{ guid }}"
         volumes:
-          - "{{ docker_dir }}/homer:/www/assets"
+          - "{{ docker_dir }}/homepage/config:/app/config"
+          - "{{ docker_dir }}/homepage/images:/app/public/images"
         networks:
           - name: proxy
         labels:
           traefik.enable: "true"
-          traefik.http.routers.homer.rule: "Host(`{{ dns_name }}`)"
-          traefik.http.routers.homer.entrypoints: "https"
-          traefik.http.routers.homer.tls.certresolver: "godaddy"
+          traefik.http.routers.homepage.rule: "Host(`{{ dns_name }}`)"
+          traefik.http.routers.homepage.entrypoints: "https"
+          traefik.http.routers.homepage.tls.certresolver: "godaddy"
 
 - name: Syncthing
   tags:

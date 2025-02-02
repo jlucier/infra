@@ -4,3 +4,9 @@
     name: homer
     restart: yes
     state: started
+
+- name: restart homepage
+  docker_container:
+    name: homepage
+    restart: yes
+    state: started

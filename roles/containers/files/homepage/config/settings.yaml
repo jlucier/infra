@@ -1,0 +1,13 @@
+title: "Homeboi"
+description: Homeboi server homepage
+
+theme: dark
+color: slate
+
+background:
+  image: /images/background.jpg
+  blur: sm
+  opacity: 50
+
+providers:
+  openweathermap: "{{ openweathermap_api_key }}"
