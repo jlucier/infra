@@ -7,7 +7,7 @@ color: slate
 background:
   image: /images/background.jpg
   blur: sm
-  opacity: 50
+  opacity: 20
 
 providers:
   openweathermap: "{{ openweathermap_api_key }}"

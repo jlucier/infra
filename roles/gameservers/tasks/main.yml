@@ -27,8 +27,8 @@
           - "{{ docker_dir }}/satisfactory/config:/config"
         hostname: satisfactory-server
         ports:
-          - "{{ local_ip }}:7777:7777/udp"
-          - "{{ local_ip }}:7777:7777/tcp"
+          - "7777:7777/udp"
+          - "7777:7777/tcp"
         env:
           MAXPLAYERS: "2"
           PGID: "1000"

@@ -52,23 +52,6 @@
       - "/var/run/docker.sock:/var/run/docker.sock"
     restart_policy: unless-stopped
 
-- name: CORS container
-  tags:
-    - containers
-    - cors
-  docker_container:
-    name: cors
-    pull: true
-    image: imjacobclark/cors-container
-    restart_policy: unless-stopped
-    networks:
-      - name: proxy
-    labels:
-      traefik.enable: "true"
-      traefik.http.routers.cors.rule: "Host(`cors.{{ dns_name }}`)"
-      traefik.http.routers.cors.entrypoints: "https"
-      traefik.http.routers.cors.tls.certresolver: "godaddy"
-
 - name: Homepage
   tags:
     - containers
@@ -86,7 +69,7 @@
     - name: Homepage images
       synchronize:
         src: "files/homepage/images"
-        dest: "{{ docker_dir }}/homepage/images/"
+        dest: "{{ docker_dir }}/homepage/"
       notify: restart homepage
 
     - name: Homepage config

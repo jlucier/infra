@@ -1,11 +1,11 @@
 - Apps:
     - Jellyfin:
         href: "https://jellyfin.{{ dns_name }}"
-        siteMonitor: "https://jellyfin.{{ dns_name }}"
+        siteMonitor: "http://jellyfin:{{ jellyfin_http }}"
         icon: jellyfin.svg
         widget:
           type: jellyfin
-          url: "https://jellyfin.{{ dns_name }}"
+          url: "http://jellyfin:{{ jellyfin_http }}"
           key: "{{ jellyfin_api_key }}"
           enableBlocks: true # optional, defaults to false
           enableNowPlaying: true # optional, defaults to true
@@ -14,102 +14,98 @@
           expandOneStreamToTwoRows: false # optional, defaults to true
     - Syncthing:
         href: "https://syncthing.{{ dns_name }}"
-        siteMonitor: "https://syncthing.{{ dns_name }}"
+        # could not manage to get this working with host.docker.internal
+        siteMonitor: "http://{{ local_ip }}:{{ syncthing_http }}"
         icon: syncthing.svg
+    - Grafana:
+        href: "https://grafana.{{ dns_name }}"
+        siteMonitor: "http://grafana:{{ grafana_http }}"
+        icon: grafana.svg
+    - Traefik:
+        href: "https://traefik.{{ dns_name }}"
+        icon: traefik.svg
     - PiKVM:
         href: "https://pikvm.lan"
         siteMonitor: "https://pikvm.lan"
         icon: pikvm.png
     - "IT Tools":
         href: "https://it-tools.{{ dns_name }}"
-        siteMonitor: "https://it-tools.{{ dns_name }}"
+        siteMonitor: "http://it-tools"
         icon: it-tools.svg
     - BorgBase:
         href: "https://www.borgbase.com/repositories"
         icon: "https://feedback.borgbase.com/static/images/logos/oANBu1Ti820NuN2a1Cg3CpFUj91lXgMvvywhOQw8k4klnnxEEu0KUX1nElDUyrcG-vorta-512.png"
 
 - Network:
-    - Traefik:
-        href: "https://traefik.{{ dns_name }}"
-        siteMonitor: "https://traefik.{{ dns_name }}"
-        icon: traefik.svg
-        widgte:
-          type: traefik
-          url: "https://cors.{{ dns_name }}/https://traefik.{{ dns_name }}/"
     - UniFi:
         href: "https://router.lan"
         siteMonitor: "https://router.lan"
         icon: unifi-controller.png
     - "Pi-hole (main)":
         href: "https://pihole.{{ dns_name }}/admin/"
-        siteMonitor: "https://pihole.{{ dns_name }}/admin/"
+        siteMonitor: "http://pihole"
         icon: pi-hole.svg
         widget:
           type: pihole
           key: "{{ pihole_apikey }}"
-          url: "https://pihole.{{ dns_name }}/"
+          url: "http://pihole"
     - "Pi-hole (failover)":
         href: "http://failhole.lan/admin/"
-        siteMonitor: "http://failhole.lan/admin/"
+        siteMonitor: "http://failhole.lan"
         icon: pi-hole.svg
         widget:
           type: pihole
           key: "{{ pihole_apikey }}"
-          url: "http://failhole.lan/"
+          url: "http://failhole.lan"
+    - "Speedtest Tracker":
+        href: "https://speedtest.{{ dns_name }}"
+        siteMonitor: "http://speedtesttracker"
+        icon: speedtest-tracker.png
+        widget:
+          type: speedtest
+          url: "http://speedtesttracker"
 
 - Dry Reeps:
     - Radarr:
         href: "https://radarr.{{ dns_name }}"
-        siteMonitor: "https://radarr.{{ dns_name }}"
+        siteMonitor: "http://radarr:{{ radarr_http }}"
         icon: radarr.svg
         widget:
           type: radarr
-          url: "https://radarr.{{ dns_name }}"
+          url: "http://radarr:{{ radarr_http }}"
           key: "{{ radarr_api_key }}"
           enableQueue: true
     - Sonarr:
         href: "https://sonarr.{{ dns_name }}"
-        siteMonitor: "https://sonarr.{{ dns_name }}"
+        siteMonitor: "http://sonarr:{{ sonarr_http }}"
         icon: sonarr.svg
         widget:
           type: sonarr
-          url: "https://sonarr.{{ dns_name }}"
+          url: "http://sonarr:{{ sonarr_http }}"
           key: "{{ sonarr_api_key }}"
     - Lidarr:
         href: "https://lidarr.{{ dns_name }}"
-        siteMonitor: "https://lidarr.{{ dns_name }}"
+        siteMonitor: "http://lidarr:{{ lidarr_http }}"
         icon: lidarr.svg
         widget:
           type: lidarr
-          url: "https://lidarr.{{ dns_name }}"
+          url: "http://lidarr:{{ lidarr_http }}"
           key: "{{ lidarr_api_key }}"
     - qBittorrent:
         href: "https://qbit.{{ dns_name }}"
-        siteMonitor: "https://qbit.{{ dns_name }}"
+        siteMonitor: "http://qbittorrent_wg"
         icon: qbittorrent.svg
         widget:
           type: qbittorrent
-          url: "https://qbit.{{ dns_name }}"
+          url: "http://qbittorrent_wg"
           username: "{{ qbittorrent_user }}"
           password: "{{ qbittorrent_password }}"
     - Prowlarr:
         href: "https://prowlarr.{{ dns_name }}"
-        siteMonitor: "https://prowlarr.{{ dns_name }}"
+        siteMonitor: "http://prowlarr:{{ prowlarr_http }}"
         icon: prowlarr.svg
-        widget:
-          type: prowlarr
-          url: "https://prowlarr.{{ dns_name }}"
-          apikey: "{{ prowlarr_api_key }}"
-
-- Analytics:
-    - "Speedtest Tracker":
-        href: "https://speedtest.{{ dns_name }}"
-        siteMonitor: "https://speedtest.{{ dns_name }}"
-        icon: speedtest-tracker.png
-        widget:
-          type: speedtest
-          url: "https://speedtest.{{ dns_name }}"
-    - Grafana:
-        href: "https://grafana.{{ dns_name }}"
-        siteMonitor: "https://grafana.{{ dns_name }}"
-        icon: grafana.svg
+        # NOTE: this api seems busted
+        # widget:
+        #   type: prowlarr
+        #   url: "http://prowlarr:{{ prowlarr_http }}"
+        #   apikey: "{{ prowlarr_api_key }}"

@@ -9,3 +9,12 @@ security_autoupdate_enabled: true
 # system ports
 node_exporter_http: 9100
 apcupsd_exporter_http: 9162
+
+# container ports for direct connection
+radarr_http: 7878
+sonarr_http: 8989
+lidarr_http: 8686
+prowlarr_http: 9696
+jellyfin_http: 8096
+grafana_http: 3000
+syncthing_http: 8384
