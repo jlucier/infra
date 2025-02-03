@@ -1,0 +1,26 @@
+- Hosting:
+    - BorgBase:
+        - href: "https://www.borgbase.com/repositories"
+          icon: "https://feedback.borgbase.com/static/images/logos/oANBu1Ti820NuN2a1Cg3CpFUj91lXgMvvywhOQw8k4klnnxEEu0KUX1nElDUyrcG-vorta-512.png"
+    - Hostinger:
+        - href: "https://hpanel.hostinger.com/"
+          icon: hostinger.svg
+
+- Jank:
+    - YouTube:
+        - href: "https://youtube.com"
+          icon: youtube.svg
+    - Reddit:
+        - href: "https://reddit.com"
+          icon: reddit.svg
+    - Daily.dev:
+        - href: "https://app.daily.dev"
+          icon: /images/daily.dev.png
+
+- Dev:
+    - Github:
+        - href: "https://github.com"
+          icon: github.svg
+    - Stack Overflow:
+        - href: "https://stackoverflow.com"
+          icon: /images/stackoverflow.png

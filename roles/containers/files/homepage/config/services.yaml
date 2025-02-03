@@ -32,9 +32,6 @@
         href: "https://it-tools.{{ dns_name }}"
         siteMonitor: "http://it-tools"
         icon: it-tools.svg
-    - BorgBase:
-        href: "https://www.borgbase.com/repositories"
-        icon: "https://feedback.borgbase.com/static/images/logos/oANBu1Ti820NuN2a1Cg3CpFUj91lXgMvvywhOQw8k4klnnxEEu0KUX1nElDUyrcG-vorta-512.png"
 
 - Network:
     - UniFi:
