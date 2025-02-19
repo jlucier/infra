@@ -44,16 +44,18 @@
         icon: pi-hole.svg
         widget:
           type: pihole
-          key: "{{ pihole_apikey }}"
+          key: "{{ pihole_app_password }}"
           url: "http://pihole"
+          version: 6
     - "Pi-hole (failover)":
         href: "http://failhole.lan/admin/"
         siteMonitor: "http://failhole.lan"
         icon: pi-hole.svg
         widget:
           type: pihole
-          key: "{{ pihole_apikey }}"
+          key: "{{ pihole_app_password }}"
           url: "http://failhole.lan"
+          version: 6
     - "Speedtest Tracker":
         href: "https://speedtest.{{ dns_name }}"
         siteMonitor: "http://speedtesttracker"
