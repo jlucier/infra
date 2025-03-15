@@ -91,6 +91,7 @@
         env:
           PUID: "{{ uid }}"
           PGID: "{{ guid }}"
+          HOMEPAGE_ALLOWED_HOSTS: "{{ dns_name }}"
         volumes:
           - "{{ docker_dir }}/homepage/config:/app/config"
           - "{{ docker_dir }}/homepage/images:/app/public/images"
