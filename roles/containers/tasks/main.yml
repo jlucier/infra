@@ -121,6 +121,7 @@
     volumes:
       - "{{ docker_dir }}/syncthing:/var/syncthing"
       - "/bigboi/storage/sync:/sync"
+      - "/bigboi/storage/ssh_sync:/ssh_sync"
       - "/bigboi/media/:/media"
     labels:
       traefik.enable: "true"
