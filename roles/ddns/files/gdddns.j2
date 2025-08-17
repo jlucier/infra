@@ -2,7 +2,7 @@
 
 mydomain="{{ godaddy_domain }}"
 myhostname="{{ godaddy_hostname }}"
-gdapikey="{{ godaddy_api_key }}"
+gdapikey="{{ godaddy_api_key }}:{{ godaddy_api_secret }}"
 logdest="local7.info"
 
 myip=`curl -s "https://api.ipify.org"`
