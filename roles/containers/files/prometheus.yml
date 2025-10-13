@@ -10,3 +10,10 @@ scrape_configs:
           - "host.docker.internal:{{ node_exporter_http }}" # node-exporter
           - "cadvisor:8080" # cAdvisor
           - "host.docker.internal:{{ apcupsd_exporter_http }}" # ups
+
+  - job_name: drybox
+    metrics_path: /metrics
+    scrape_interval: 60s
+    static_configs:
+      - targets:
+        - "192.168.40.10:80"
