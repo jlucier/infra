@@ -1,0 +1,53 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
+    networks:
+      llm:
+    volumes:
+      - "{{ docker_dir }}/llm/ollama_cache:/root/.ollama"
+    environment:
+      - OLLAMA_KEEP_ALIVE=5m
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    runtime: nvidia
+
+  anythingllm:
+    image: mintplexlabs/anythingllm:latest
+    container_name: anythingllm
+    restart: unless-stopped
+    volumes:
+      - "{{ docker_dir }}/llm/anythingllm_storage:/app/server/storage"
+    networks:
+      llm:
+      proxy:
+    environment:
+      - STORAGE_DIR=/app/server/storage
+      - LLM_PROVIDER=ollama
+      - OLLAMA_BASE_PATH=http://ollama:11434
+      - OLLAMA_MODEL_PREF=gemma3
+      - EMBEDDING_ENGINE=ollama
+      - EMBEDDING_BASE_PATH=http://ollama:11434
+      - VECTOR_DB=lancedb
+      - WHISPER_PROVIDER=local
+      - TTS_PROVIDER=native
+      - JWT_SECRET="{{ anythingllm_jwt_secret }}"
+    depends_on:
+      - ollama
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.llm.rule=Host(`llm.{{ dns_name }}`)"
+      - "traefik.http.routers.llm.entrypoints=https"
+      - "traefik.http.services.llm.loadbalancer.server.port=3001"
+      - "traefik.http.routers.llm.tls.certresolver=godaddy"
+
+networks:
+  llm:
+  proxy:
+    external: true

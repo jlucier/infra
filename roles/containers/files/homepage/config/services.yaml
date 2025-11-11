@@ -32,6 +32,9 @@
         href: "https://it-tools.{{ dns_name }}"
         siteMonitor: "http://it-tools"
         icon: it-tools.svg
+    - AnythingLLM:
+        href: "https://llm.{{ dns_name }}"
+        icon: /images/anythingllm.png
 
 - Network:
     - UniFi:

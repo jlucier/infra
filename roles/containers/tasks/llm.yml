@@ -1,0 +1,32 @@
+---
+- name: Configure Local LLM Stack
+  tags:
+    - containers
+    - ai
+    - llm
+  block:
+    - name: Create and chmod folders
+      become: true
+      file:
+        path: "{{item}}"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        state: directory
+        mode: 0755
+        recurse: true
+      loop:
+        - "{{ docker_dir }}/llm/ollama_cache"
+        - "{{ docker_dir }}/llm/anythingllm_storage"
+
+    - name: Sync compose file
+      become: true
+      template:
+        src: files/llm-compose.yml
+        dest: "{{ docker_dir }}/llm/docker-compose.yml"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        mode: 0600
+
+    - name: Run LLM compose file
+      community.docker.docker_compose_v2:
+        project_src: "{{ docker_dir }}/llm"
