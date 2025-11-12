@@ -34,6 +34,7 @@
         icon: it-tools.svg
     - AnythingLLM:
         href: "https://llm.{{ dns_name }}"
+        siteMonitor: "https://llm.{{ dns_name }}"
         icon: /images/anythingllm.png
 
 - Network:
