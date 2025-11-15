@@ -52,7 +52,7 @@
           url: "http://pihole"
           version: 6
     - "Pi-hole (failover)":
-        href: "http://failhole.lan/admin/"
+        href: "https://failhole.lan/admin/"
         siteMonitor: "http://failhole.lan"
         icon: pi-hole.svg
         widget:

@@ -97,6 +97,8 @@
           - "{{ docker_dir }}/homepage/images:/app/public/images"
         networks:
           - name: proxy
+        etc_hosts:
+          failhole.lan: "{{ failhole_ip }}"
         labels:
           traefik.enable: "true"
           traefik.http.routers.homepage.rule: "Host(`{{ dns_name }}`)"
