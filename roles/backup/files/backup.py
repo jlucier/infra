@@ -1,6 +1,12 @@
 #! /usr/bin/env python3.11
 
 # NOTE: make sure permission for snapshotting is allowed on pools
+#
+# This version is written for Borg 1.x (e.g. 1.4.x packaging).
+# It assumes:
+#   - "borg info" is used to test repo existence
+#   - "borg init --encryption=repokey-blake2" to create repos
+#   - archive names are explicit, not using Borg 2.x "{now}" syntax
 
 import argparse
 import logging
@@ -12,12 +18,6 @@ import tomllib
 from datetime import datetime, timedelta
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-
-"""
-Install:
-    - download borg 2.0 release binary, move to /usr/local/lib
-    - python3.11 (apt)
-"""
 
 LOG_FMT = "[%(name)s][%(asctime)s][%(levelname)s]: %(message)s"
 logging.basicConfig(format=LOG_FMT)
@@ -120,23 +120,25 @@ def make_borg_env(repo: str):
 
 
 def do_backup(snapshot: str, conf: dict):
+    # snapshot is "pool/fs@tag"
     fs, snap_name = snapshot.split("@")
-    _, dt = parse_archive_tag(snap_name)
+    prefix, dt = parse_archive_tag(snap_name)
 
-    snap_dir = Path(get_fs_mountpoint(fs)) / ".zfs/snapshot/" / snap_name
+    snap_dir = Path(get_fs_mountpoint(fs)) / ".zfs/snapshot" / snap_name
 
     borg_env = make_borg_env(conf["repo"])
 
     # check if repo exists, create if not
-    rinfo = borg_cmd("borg rinfo", env=borg_env, check=False)
+    rinfo = borg_cmd("borg info", env=borg_env, check=False)
     if rinfo.returncode == 2:
         # repo dne, create
         logger.info(f"Creating new repo for {fs}")
-        borg_cmd("borg rcreate --encryption repokey-blake2-aes-ocb", env=borg_env)
+        borg_cmd("borg init --encryption=repokey-blake2", env=borg_env)
     elif rinfo.returncode != 0:
-        failexit(f"Unexpected return from borg rinfo {rinfo.returncode}")
+        failexit(f"Unexpected return from borg info {rinfo.returncode}")
 
-    logger.info(f"Backing up snaphot {snapshot}")
+    # need to strip microseconds for borg
+    dt = dt.replace(microsecond=0)
     opts = [
         "--exclude-caches",
         "--compression=zstd",
@@ -146,8 +148,13 @@ def do_backup(snapshot: str, conf: dict):
     if conf.get("exclude"):
         opts.extend(f"--exclude={e}" for e in conf["exclude"])
 
+    logger.info(f"Backing up snapshot {snapshot}")
+
     opts = " ".join(opts)
-    res = borg_cmd(f"borg create {opts} '{{now}}' .", cwd=snap_dir, env=borg_env)
+    # archive name derived from snapshot tag (auto-<ISO_TIMESTAMP>)
+    archive_name = f"{prefix}-{dt.isoformat()}"
+    # Borg 1.x: use ::ARCHIVE shorthand, relying on BORG_REPO in env
+    res = borg_cmd(f"borg create {opts} ::{archive_name} .", cwd=snap_dir, env=borg_env)
     logger.info(f"Output:\n{res.stdout}\n{res.stderr}")
 
 
@@ -167,7 +174,7 @@ def initial_setup(config: dict):
 
     BORG_PASSPHRASE = pass_file.read_text()
 
-    # create key export dir
+    # create key export dir (even if not yet used)
     BORG_KEYFILE_EXPORT_DIR = Path(config["keyfile_export_dir"]).expanduser()
     BORG_KEYFILE_EXPORT_DIR.mkdir(exist_ok=True)
 
@@ -220,9 +227,12 @@ def main(args):
     if not int(execute("id -u")):
         failexit("Don't as root!")
 
+    # Note: log_file is taken from config, not the -l flag.
     if args.config.get("log_file"):
         fh = RotatingFileHandler(
-            Path(args.config["log_file"]).expanduser(), maxBytes=int(1e6), backupCount=2
+            Path(args.config["log_file"]).expanduser(),
+            maxBytes=int(1e6),
+            backupCount=2,
         )
         fh.setFormatter(logging.Formatter(LOG_FMT))
         logger.addHandler(fh)
@@ -234,7 +244,10 @@ def main(args):
     initial_setup(args.config)
 
     for fs_conf in args.config["fs"].values():
-        perform_backups(args.config, fs_conf)
+        try:
+            perform_backups(args.config, fs_conf)
+        except Exception:
+            logger.exception(f"{fs_conf['fs']} failed to back up! Moving on...")
 
     logger.info("Complete!")
 

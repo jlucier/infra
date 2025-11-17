@@ -14,14 +14,27 @@ day = 7
 week = 4
 month = 6
 
+[fs.storage]
+fs = "bigboi/storage"
+repo = "{{ storage_borg_repo }}"
+
 [fs.docker]
 fs = "fastboi/docker"
-repo = "{{ gb_docker_repo }}"
+repo = "{{ homeboi_docker_borg_repo }}"
 exclude = [
   "wireguard",
   "grafana",
 ]
 
-[fs.storage]
-fs = "bigboi/storage"
-repo = "{{ gb_storage_repo }}"
+[fs.media]
+fs = "bigboi/media"
+repo = "{{ media_borg_repo }}"
+exclude = [
+  "djank_music",
+  "downloads",
+  "movies",
+  "tv",
+  "youtube",
+  ".stfolder",
+  ".stignore",
+]
