@@ -46,6 +46,10 @@
     - role: roles/torrent
     - role: roles/gameservers
 
+    - role: roles/mbtaweb
+      tags:
+        - mbta
+
     - role: ddns
       become: yes
       tags:

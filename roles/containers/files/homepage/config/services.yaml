@@ -36,6 +36,9 @@
         href: "https://llm.{{ dns_name }}"
         siteMonitor: "https://llm.{{ dns_name }}"
         icon: /images/anythingllm.png
+    - MBTA:
+        href: "https://mbta.{{ dns_name }}"
+        icon: /images/mbta.png
 
 - Network:
     - UniFi:

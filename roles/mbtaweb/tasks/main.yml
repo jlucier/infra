@@ -1,0 +1,44 @@
+---
+- name: Build MBTA locally
+  delegate_to: localhost
+  shell: |
+    yarn install
+    yarn build
+  args:
+    chdir: roles/mbtaweb/files/mbta
+
+- name: Create and chmod folders
+  become: true
+  file:
+    path: "{{ docker_dir }}/mbta"
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    state: directory
+    mode: 0755
+
+- name: Copy dist to server
+  synchronize:
+    src: files/mbta/dist/
+    dest: "{{ docker_dir }}/mbta/html/"
+    delete: yes
+  register: sync
+
+- name: Run nginx container
+  when: sync.changed
+  community.docker.docker_container:
+    name: mbta_web
+    image: nginx:alpine
+    state: started
+    restart_policy: unless-stopped
+    networks:
+      - name: proxy
+    env:
+      PUID: "{{ uid }}"
+      PGID: "{{ guid }}"
+    volumes:
+      - "{{ docker_dir }}/mbta/html:/usr/share/nginx/html:ro"
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.mbta.rule: "Host(`mbta.{{ dns_name }}`)"
+      traefik.http.routers.mbta.entrypoints: "https"
+      traefik.http.routers.mbta.tls.certresolver: "godaddy"
