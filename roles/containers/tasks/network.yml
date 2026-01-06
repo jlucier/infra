@@ -85,6 +85,9 @@
           "SPEEDTEST_SERVERS": "1774,13429,49814"
           "PRUNE_RESULTS_OLDER_THAN": "30"
           "DISPLAY_TIMEZONE": "{{ timezone }}"
+        dns_servers:
+          - 1.1.1.1
+          - 9.9.9.9
         volumes:
           - "{{ docker_dir }}/speedtest:/config"
         restart_policy: unless-stopped
