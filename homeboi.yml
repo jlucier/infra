@@ -43,7 +43,7 @@
         - ups
 
     - role: roles/containers
-    - role: roles/torrent
+    - role: roles/usenet
     - role: roles/gameservers
 
     - role: roles/mbtaweb

@@ -97,15 +97,14 @@
           type: lidarr
           url: "http://lidarr:{{ lidarr_http }}"
           key: "{{ lidarr_api_key }}"
-    - qBittorrent:
-        href: "https://qbit.{{ dns_name }}"
-        siteMonitor: "http://qbittorrent_wg"
-        icon: qbittorrent.svg
+    - Sabnzbd:
+        href: "https://sabnzbd.{{ dns_name }}"
+        siteMonitor: "http://torrentvpn:8080"
+        icon: sabnzbd.svg
         widget:
-          type: qbittorrent
-          url: "http://qbittorrent_wg"
-          username: "{{ qbittorrent_user }}"
-          password: "{{ qbittorrent_password }}"
+          type: sabnzbd
+          url: "http://torrentvpn:8080"
+          key: "{{ sabnzbd_api_key }}"
     - Prowlarr:
         href: "https://prowlarr.{{ dns_name }}"
         siteMonitor: "http://prowlarr:{{ prowlarr_http }}"

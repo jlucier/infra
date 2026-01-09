@@ -1,0 +1,32 @@
+---
+- name: Usenet
+  tags:
+    - usenet
+  block:
+    - name: Create and chmod folders
+      become: true
+      file:
+        path: "{{ docker_dir }}/sabnzbd"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        state: directory
+        mode: 0755
+
+    - name: Install the docker compose file
+      become: true
+      template:
+        src: "files/docker-compose.yml"
+        dest: "{{ docker_dir }}/sabnzbd/docker-compose.yml"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+
+    - name: Install vpn creds
+      become: true
+      copy:
+        src: "files/wg0.conf"
+        dest: "{{ docker_dir }}/sabnzbd/"
+        mode: 0500
+
+    - name: Run compose project
+      community.docker.docker_compose_v2:
+        project_src: "{{ docker_dir }}/sabnzbd/"
