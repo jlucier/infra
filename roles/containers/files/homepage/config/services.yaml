@@ -15,7 +15,7 @@
     - Syncthing:
         href: "https://syncthing.{{ dns_name }}"
         # could not manage to get this working with host.docker.internal
-        siteMonitor: "http://{{ local_ip }}:{{ syncthing_http }}"
+        siteMonitor: "http://syncthing:{{ syncthing_http }}"
         icon: syncthing.svg
     - Grafana:
         href: "https://grafana.{{ dns_name }}"
@@ -34,7 +34,7 @@
         icon: it-tools.svg
     - AnythingLLM:
         href: "https://llm.{{ dns_name }}"
-        siteMonitor: "https://llm.{{ dns_name }}"
+        siteMonitor: "http://llm"
         icon: /images/anythingllm.png
     - MBTA:
         href: "https://mbta.{{ dns_name }}"
@@ -99,11 +99,11 @@
           key: "{{ lidarr_api_key }}"
     - Sabnzbd:
         href: "https://sabnzbd.{{ dns_name }}"
-        siteMonitor: "http://torrentvpn:8080"
+        siteMonitor: "http://sabnzbd:8080"
         icon: sabnzbd.svg
         widget:
           type: sabnzbd
-          url: "http://torrentvpn:8080"
+          url: "http://sabnzbd:8080"
           key: "{{ sabnzbd_api_key }}"
     - Prowlarr:
         href: "https://prowlarr.{{ dns_name }}"

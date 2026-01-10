@@ -1,187 +1,37 @@
 ---
-- name: Prowlarr
+- name: Create media + Arr stack
   tags:
     - media
+    - usenet
+    - arr
     - containers
-    - prowlarr
-  block:
-    - name: Create folders
-      become: true
-      file:
-        path: "{{ docker_dir }}/prowlarr/config"
-        state: directory
-        owner: "{{ username }}"
-        group: "{{ username }}"
-        mode: 0755
-
-    - name: Make sure the container is created and running
-      docker_container:
-        name: prowlarr
-        image: lscr.io/linuxserver/prowlarr:latest
-        pull: true
-        state: started
-        env:
-          "PUID": "1000"
-          "PGID": "1000"
-          "TZ": "America/New_York"
-        volumes:
-          - "{{ docker_dir }}/prowlarr/config:/config"
-        restart_policy: unless-stopped
-        networks:
-          - name: proxy
-        labels:
-          traefik.enable: "true"
-          traefik.http.routers.prowlarr.rule: "Host(`prowlarr.{{ dns_name }}`)"
-          traefik.http.routers.prowlarr.entrypoints: "https"
-          traefik.http.routers.prowlarr.tls.certresolver: "godaddy"
-
-- name: Radarr
-  tags:
-    - media
-    - containers
-    - radarr
-  block:
-    - name: Create folders
-      become: true
-      file:
-        path: "{{ docker_dir }}/radarr/config"
-        state: directory
-        owner: "{{ username }}"
-        group: "{{ username }}"
-        mode: 0755
-
-    - name: Make sure the container is created and running
-      docker_container:
-        name: radarr
-        image: lscr.io/linuxserver/radarr:latest
-        pull: true
-        state: started
-        env:
-          "PUID": "1000"
-          "PGID": "1000"
-          "TZ": "America/New_York"
-        volumes:
-          - "{{ docker_dir }}/radarr/config:/config"
-          - "/bigboi/media:/media"
-        restart_policy: unless-stopped
-        networks:
-          - name: proxy
-        labels:
-          traefik.enable: "true"
-          traefik.http.routers.radarr.rule: "Host(`radarr.{{ dns_name }}`)"
-          traefik.http.routers.radarr.entrypoints: "https"
-          traefik.http.routers.radarr.tls.certresolver: "godaddy"
-
-- name: Lidarr
-  tags:
-    - media
-    - containers
-    - lidarr
-  block:
-    - name: Create folders
-      become: true
-      file:
-        path: "{{ docker_dir }}/lidarr/config"
-        state: directory
-        owner: "{{ username }}"
-        group: "{{ username }}"
-        mode: 0755
-
-    - name: Make sure the container is created and running
-      docker_container:
-        name: lidarr
-        image: lscr.io/linuxserver/lidarr:latest
-        pull: true
-        state: started
-        env:
-          "PUID": "1000"
-          "PGID": "1000"
-          "TZ": "America/New_York"
-        volumes:
-          - "{{ docker_dir }}/lidarr/config:/config"
-          - "/bigboi/media:/media"
-        restart_policy: unless-stopped
-        networks:
-          - name: proxy
-        labels:
-          traefik.enable: "true"
-          traefik.http.routers.lidarr.rule: "Host(`lidarr.{{ dns_name }}`)"
-          traefik.http.routers.lidarr.entrypoints: "https"
-          traefik.http.routers.lidarr.tls.certresolver: "godaddy"
-
-- name: Sonarr
-  tags:
-    - media
-    - containers
-    - sonarr
-  block:
-    - name: Create folders
-      become: true
-      file:
-        path: "{{ docker_dir }}/sonarr/config"
-        state: directory
-        owner: "{{ username }}"
-        group: "{{ username }}"
-        mode: 0755
-
-    - name: Make sure the container is created and running
-      docker_container:
-        name: sonarr
-        image: lscr.io/linuxserver/sonarr:latest
-        pull: true
-        state: started
-        env:
-          "PUID": "1000"
-          "PGID": "1000"
-          "TZ": "America/New_York"
-        volumes:
-          - "{{ docker_dir }}/sonarr/config:/config"
-          - "/bigboi/media:/media"
-        restart_policy: unless-stopped
-        networks:
-          - name: proxy
-        labels:
-          traefik.enable: "true"
-          traefik.http.routers.sonarr.rule: "Host(`sonarr.{{ dns_name }}`)"
-          traefik.http.routers.sonarr.entrypoints: "https"
-          traefik.http.routers.sonarr.tls.certresolver: "godaddy"
-
-- name: Jellyfin
-  tags:
-    - containers
-    - jellyfin
-    - media
   block:
     - name: Create and chmod folders
       become: true
       file:
-        path: "{{ item }}"
+        path: "{{ docker_dir }}/media/{{ item }}"
         owner: "{{ username }}"
         group: "{{ username }}"
         state: directory
         mode: 0755
       with_items:
-        - "{{ docker_dir }}/jellyfin/config"
-        - "{{ docker_dir }}/jellyfin/cache"
+        - "jellyfin/config"
+        - "jellyfin/cache"
+        - "jellyfin/transcodes"
+        - "prowlarr/config"
+        - "radarr/config"
+        - "sonarr/config"
+        - "lidarr/config"
+        - "sabnzbd"
 
-    - name: Make sure the Jellyfin container is created and running
-      docker_container:
-        name: jellyfin
-        image: "jellyfin/jellyfin"
-        pull: true
-        state: started
-        user: "{{ uid }}"
-        volumes:
-          - "{{ docker_dir }}/jellyfin/config:/config"
-          - "{{ docker_dir }}/jellyfin/cache:/cache"
-          - "{{ docker_dir }}/jellyfin/transcodes:/transcodes"
-          - "/bigboi/media:/media"
-        restart_policy: unless-stopped
-        runtime: nvidia
-        networks:
-          - name: proxy
-        labels:
-          traefik.enable: "true"
-          traefik.http.routers.jellyfin.rule: "Host(`jellyfin.{{ dns_name }}`)"
-          traefik.http.routers.jellyfin.entrypoints: "https"
-          traefik.http.routers.jellyfin.tls.certresolver: "godaddy"
+    - name: Install the docker compose file
+      become: true
+      template:
+        src: "files/media-compose.yml"
+        dest: "{{ docker_dir }}/media/docker-compose.yml"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+
+    - name: Run compose project
+      community.docker.docker_compose_v2:
+        project_src: "{{ docker_dir }}/media/"

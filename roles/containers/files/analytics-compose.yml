@@ -13,8 +13,8 @@ services:
       - "--web.console.libraries=/usr/share/prometheus/console_libraries"
       - "--web.console.templates=/usr/share/prometheus/consoles"
     volumes:
-      - "{{ docker_dir }}/prometheus/etc:/etc/prometheus"
-      - "{{ docker_dir }}/prometheus:/prometheus"
+      - "{{ docker_dir }}/analytics/prometheus/etc:/etc/prometheus"
+      - "{{ docker_dir }}/analytics/prometheus:/prometheus"
     restart: unless-stopped
     networks:
       analytics:
@@ -37,7 +37,6 @@ services:
     networks:
       analytics:
     volumes:
-      - "{{ docker_dir }}/grafana:/var/lib/grafana"
       - /:/rootfs:ro
       - /var/run:/var/run:ro
       - /sys:/sys:ro
@@ -52,7 +51,7 @@ services:
     environment:
       TZ: "{{ timezone }}"
     volumes:
-      - "{{ docker_dir }}/grafana:/var/lib/grafana"
+      - "{{ docker_dir }}/analytics/grafana:/var/lib/grafana"
     restart: unless-stopped
     networks:
       analytics:
