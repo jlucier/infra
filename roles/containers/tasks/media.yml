@@ -25,13 +25,30 @@
         - "sabnzbd"
 
     - name: Install the docker compose file
-      become: true
       template:
         src: "files/media-compose.yml"
         dest: "{{ docker_dir }}/media/docker-compose.yml"
-        owner: "{{ username }}"
-        group: "{{ username }}"
 
     - name: Run compose project
       community.docker.docker_compose_v2:
         project_src: "{{ docker_dir }}/media/"
+
+
+- name: Hardlink cleanup
+  tags:
+    - media
+    - hardlink
+  block:
+    - name: Install hardlink script
+      copy:
+        src: "files/hardlink_cleanup.sh"
+        dest: "{{ docker_dir }}/media/"
+        mode: 0500
+
+    - name: Hardlink cron
+      become: yes
+      cron:
+        name: Hardlink cleanup
+        user: root
+        hour: "0"
+        job: "{{ docker_dir }}/media/hardlink_cleanup.sh > /dev/null"

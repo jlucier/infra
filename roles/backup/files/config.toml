@@ -33,6 +33,7 @@ exclude = [
   "djank_music",
   "downloads",
   "movies",
+  "music",
   "tv",
   "youtube",
   ".stfolder",
