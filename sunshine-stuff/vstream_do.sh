@@ -37,8 +37,8 @@ if [[ -z "$PRIMARY_OUT" ]]; then
   PRIMARY_OUT="$(echo "$KS_OUTPUT" | awk '/^Output:/{print $3; exit}')"
 fi
 
-# Target is DP-3 (the 16:9 monitor you want to use for streaming)
-TARGET_OUT="DP-3"
+# Target is DP-2 (the 16:9 monitor you want to use for streaming)
+TARGET_OUT="DP-2"
 
 # Get current rotation for TARGET_OUT
 TARGET_ROT_NUM=""
