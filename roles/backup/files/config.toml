@@ -16,19 +16,24 @@ month = 6
 
 [fs.storage]
 fs = "bigboi/storage"
-repo = "{{ storage_borg_repo }}"
+
+[fs.storage.repos]
+borgbase = "{{ storage_borgbase_repo }}"
+lilboi = "{{ storage_lilboi_repo }}"
 
 [fs.docker]
 fs = "fastboi/docker"
-repo = "{{ homeboi_docker_borg_repo }}"
 exclude = [
   "wireguard",
   "grafana",
 ]
 
+[fs.docker.repos]
+borgbase = "{{ homeboi_docker_borgbase_repo }}"
+lilboi = "{{ homeboi_docker_lilboi_repo }}"
+
 [fs.media]
 fs = "bigboi/media"
-repo = "{{ media_borg_repo }}"
 exclude = [
   "djank_music",
   "downloads",
@@ -39,3 +44,7 @@ exclude = [
   ".stfolder",
   ".stignore",
 ]
+
+[fs.media.repos]
+borgbase = "{{ media_borgbase_repo }}"
+lilboi = "{{ media_lilboi_repo }}"

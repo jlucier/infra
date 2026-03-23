@@ -75,15 +75,22 @@ def list_snapshots(fs: str):
     return execute(f"zfs list -H -t snapshot -o name {fs}").strip().split("\n")
 
 
-def is_snapshot_backed_up(snapshot: str):
+def get_backed_up_repos(snapshot: str) -> set[str] | None:
     try:
-        return bool(int(execute(f"zfs get {BACKUP_PROPERTY} -o value -H {snapshot}")))
-    except ValueError:
-        return False
+        value = execute(f"zfs get {BACKUP_PROPERTY} -o value -H {snapshot}").strip()
+        if value == "-" or not value:
+            return set()
+        if value == "1":
+            return None
+        return set(value.split("|"))
+    except (ValueError, subprocess.CalledProcessError):
+        return set()
 
 
-def mark_snapshot_backed_up(snapshot: str):
-    execute(f"zfs set {BACKUP_PROPERTY}=1 {snapshot}")
+def mark_repo_backed_up(snapshot: str, repo: str, done_repos: set[str]):
+    done_repos.add(repo)
+    value = "|".join(sorted(done_repos))
+    execute(f"zfs set {BACKUP_PROPERTY}={shlex.quote(value)} {snapshot}")
 
 
 def zfs_destroy(item: str):
@@ -119,20 +126,20 @@ def make_borg_env(repo: str):
     return {**os.environ, "BORG_PASSPHRASE": BORG_PASSPHRASE, "BORG_REPO": repo}
 
 
-def do_backup(snapshot: str, conf: dict):
+def do_backup(snapshot: str, repo: str, exclude: list | None = None):
     # snapshot is "pool/fs@tag"
     fs, snap_name = snapshot.split("@")
     prefix, dt = parse_archive_tag(snap_name)
 
     snap_dir = Path(get_fs_mountpoint(fs)) / ".zfs/snapshot" / snap_name
 
-    borg_env = make_borg_env(conf["repo"])
+    borg_env = make_borg_env(repo)
 
     # check if repo exists, create if not
     rinfo = borg_cmd("borg info", env=borg_env, check=False)
     if rinfo.returncode == 2:
         # repo dne, create
-        logger.info(f"Creating new repo for {fs}")
+        logger.info(f"Creating new repo at {repo}")
         borg_cmd("borg init --encryption=repokey-blake2", env=borg_env)
     elif rinfo.returncode != 0:
         failexit(f"Unexpected return from borg info {rinfo.returncode}")
@@ -145,16 +152,31 @@ def do_backup(snapshot: str, conf: dict):
         f"--timestamp={dt.isoformat()}",
     ]
 
-    if conf.get("exclude"):
-        opts.extend(f"--exclude={e}" for e in conf["exclude"])
+    if exclude:
+        opts.extend(f"--exclude={e}" for e in exclude)
 
-    logger.info(f"Backing up snapshot {snapshot}")
+    logger.info(f"Backing up snapshot {snapshot} to {repo}")
 
     opts = " ".join(opts)
     # archive name derived from snapshot tag (auto-<ISO_TIMESTAMP>)
     archive_name = f"{prefix}-{dt.isoformat()}"
     # Borg 1.x: use ::ARCHIVE shorthand, relying on BORG_REPO in env
-    res = borg_cmd(f"borg create {opts} ::{archive_name} .", cwd=snap_dir, env=borg_env)
+    res = borg_cmd(
+        f"borg create {opts} ::{archive_name} .",
+        cwd=snap_dir,
+        env=borg_env,
+        check=False,
+    )
+
+    if res.returncode == 2:
+        if "already exists" in (res.stderr or ""):
+            logger.info(f"Archive {archive_name} already exists in {repo}, skipping")
+            return
+        output = "\n".join(filter(None, [res.stdout, res.stderr]))
+        failexit(f"Borg command failed fatally\n{output}")
+    elif res.returncode == 1:
+        logger.warning(f"Borg command warning\n{res.stdout}\n{res.stderr}")
+
     logger.info(f"Output:\n{res.stdout}\n{res.stderr}")
 
 
@@ -174,14 +196,26 @@ def initial_setup(config: dict):
 
     BORG_PASSPHRASE = pass_file.read_text()
 
-    # create key export dir (even if not yet used)
     BORG_KEYFILE_EXPORT_DIR = Path(config["keyfile_export_dir"]).expanduser()
     BORG_KEYFILE_EXPORT_DIR.mkdir(exist_ok=True)
 
 
+def export_keyfile(repo: str, fs_name: str, repo_name: str):
+    if BORG_KEYFILE_EXPORT_DIR is None:
+        return
+    safe_name = fs_name.replace("/", "_")
+    export_path = BORG_KEYFILE_EXPORT_DIR / f"{safe_name}_{repo_name}.key"
+    borg_env = make_borg_env(repo)
+    borg_cmd(f"borg key export :: {export_path}", env=borg_env)
+    export_path.chmod(0o600)
+    logger.info(f"Exported keyfile for {fs_name} to {export_path}")
+
+
 def perform_backups(config: dict, fs_conf: dict):
     fs = fs_conf["fs"]
-    logger.info(f"Working on {fs}...")
+    repos = fs_conf["repos"]  # name -> path mapping
+    exclude = fs_conf.get("exclude")
+    logger.info(f"Working on {fs} - {len(repos)} repo(s)...")
 
     dt = datetime.now()
     snap = f"{AUTO_PREFIX}-{dt.isoformat()}"
@@ -194,9 +228,37 @@ def perform_backups(config: dict, fs_conf: dict):
     ]
 
     for snap in snaps:
-        if not is_snapshot_backed_up(snap):
-            do_backup(snap, fs_conf)
-            mark_snapshot_backed_up(snap)
+        done_repos = get_backed_up_repos(snap)
+        if done_repos is None:
+            continue
+        for repo_name, repo in repos.items():
+            if repo not in done_repos:
+                try:
+                    do_backup(snap, repo, exclude)
+                    mark_repo_backed_up(snap, repo, done_repos)
+                except Exception:
+                    logger.exception(f"Failed to back up {snap} to {repo_name}")
+
+    day = config["day"]
+    week = config["week"]
+    month = config["month"]
+
+    for repo_name, repo in repos.items():
+        try:
+            export_keyfile(repo, fs, repo_name)
+
+            borg_env = make_borg_env(repo)
+
+            logger.info(f"Borg prune for {fs} repo {repo_name}")
+            borg_cmd(
+                f"borg prune --keep-daily={day} --keep-weekly={week} --keep-monthly={month}",
+                env=borg_env,
+            )
+
+            logger.info(f"Borg compact {fs} repo {repo_name}")
+            borg_cmd("borg compact", env=borg_env)
+        except Exception:
+            logger.exception(f"Failed maintenance for {fs} repo {repo_name}")
 
     logger.info(f"Cleaning snapshots for {fs}")
 
@@ -205,20 +267,6 @@ def perform_backups(config: dict, fs_conf: dict):
         if dt - snap_dt > timedelta(days=config["keep_snapshot_days"]):
             logger.info(f"Dropping old snapshot {snap}")
             zfs_destroy(snap)
-
-    borg_env = make_borg_env(fs_conf["repo"])
-
-    logger.info(f"Borg prune for {fs}")
-    day = config["day"]
-    week = config["week"]
-    month = config["month"]
-    borg_cmd(
-        f"borg prune --keep-daily={day} --keep-weekly={week} --keep-monthly={month}",
-        env=borg_env,
-    )
-
-    logger.info(f"Borg compact {fs}")
-    borg_cmd("borg compact", env=borg_env)
 
     logger.info(f"Finished {fs}")
 
