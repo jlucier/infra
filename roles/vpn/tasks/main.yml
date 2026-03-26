@@ -22,3 +22,25 @@
       - "{{ docker_dir }}/wireguard/config:/config"
       - "/lib/modules:/lib/modules"
     restart_policy: unless-stopped
+
+- name: Wait for peer configs to be generated
+  wait_for:
+    path: "{{ docker_dir }}/wireguard/config/peer_{{ item }}/peer_{{ item }}.conf"
+  loop: "{{ vpn_peers.split(',') }}"
+  tags: [never, fetch-creds]
+
+- name: Fetch peer configs to local machine
+  fetch:
+    src: "{{ docker_dir }}/wireguard/config/peer_{{ item }}/peer_{{ item }}.conf"
+    dest: "{{ playbook_dir }}/wireguard/{{ inventory_hostname }}/{{ item }}.conf"
+    flat: yes
+  loop: "{{ vpn_peers.split(',') }}"
+  tags: [never, fetch-creds]
+
+- name: Fetch peer QR codes to local machine
+  fetch:
+    src: "{{ docker_dir }}/wireguard/config/peer_{{ item }}/peer_{{ item }}.png"
+    dest: "{{ playbook_dir }}/wireguard/{{ inventory_hostname }}/{{ item }}.png"
+    flat: yes
+  loop: "{{ vpn_peers.split(',') }}"
+  tags: [never, fetch-creds]

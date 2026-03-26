@@ -3,3 +3,4 @@ vault.yml
 vault/**/*
 **/.DS_Store
 **/wg0.conf
+wireguard
