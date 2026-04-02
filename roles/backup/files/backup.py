@@ -123,7 +123,12 @@ def snapshot(fs: str, name: str):
 
 
 def make_borg_env(repo: str):
-    return {**os.environ, "BORG_PASSPHRASE": BORG_PASSPHRASE, "BORG_REPO": repo}
+    return {
+        **os.environ,
+        "BORG_PASSPHRASE": BORG_PASSPHRASE,
+        "BORG_REPO": repo,
+        "BORG_RSH": "ssh -o StrictHostKeyChecking=accept-new",
+    }
 
 
 def do_backup(snapshot: str, repo: str, exclude: list | None = None):
@@ -311,15 +316,26 @@ def clean_snaps(args):
                 zfs_destroy(snap)
 
 
+def run_cmd(args):
+    initial_setup(args.config)
+
+    if args.fs not in args.config["fs"]:
+        failexit(f"Filesystem '{args.fs}' not found in config")
+
+    fs_conf = args.config["fs"][args.fs]
+    if args.repo not in fs_conf["repos"]:
+        failexit(f"Repo '{args.repo}' not found in fs '{args.fs}'")
+
+    repo = fs_conf["repos"][args.repo]
+    borg_env = make_borg_env(repo)
+    cmd = " ".join(args.cmd)
+    logger.info(f"Running: {cmd} (repo: {args.fs}/{args.repo} -> {repo})")
+    p = subprocess.run(shlex.split(cmd), env=borg_env)
+    raise SystemExit(p.returncode)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("Backups")
-    parser.add_argument(
-        "-l",
-        "--log-file",
-        type=lambda x: Path(x).expanduser(),
-        default=Path.home() / "backups",
-        help="Path to use for log file (rotated)",
-    )
     parser.add_argument(
         "-c",
         "--config",
@@ -327,4 +343,21 @@ if __name__ == "__main__":
         default=tomllib.load((Path.home() / "backups/config.toml").open("rb")),
         help="Path to config file",
     )
-    main(parser.parse_args())
+
+    subs = parser.add_subparsers(dest="mode")
+
+    run_parser = subs.add_parser("run", help="Run a borg command against a named repo")
+    run_parser.add_argument("fs", help="Filesystem name from config")
+    run_parser.add_argument("repo", help="Repo name within the filesystem")
+    run_parser.add_argument("cmd", nargs=argparse.REMAINDER, help="Command to run")
+
+    clean_parser = subs.add_parser("clean", help="Interactively clean snapshots")
+
+    args = parser.parse_args()
+    match args.mode:
+        case "run":
+            run_cmd(args)
+        case "clean":
+            clean_snaps(args)
+        case _:
+            main(args)
