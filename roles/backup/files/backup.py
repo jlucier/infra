@@ -138,9 +138,13 @@ def do_backup(snapshot: str, repo: str, exclude: list | None = None):
     # check if repo exists, create if not
     rinfo = borg_cmd("borg info", env=borg_env, check=False)
     if rinfo.returncode == 2:
-        # repo dne, create
-        logger.info(f"Creating new repo at {repo}")
-        borg_cmd("borg init --encryption=repokey-blake2", env=borg_env)
+        rinfo_output = "\n".join(filter(None, [rinfo.stdout, rinfo.stderr]))
+        if "does not exist" in rinfo_output or "not a valid repository" in rinfo_output:
+            # repo dne, create
+            logger.info(f"Creating new repo at {repo}")
+            borg_cmd("borg init --encryption=repokey-blake2", env=borg_env)
+        else:
+            failexit(f"Borg info failed for {repo}\n{rinfo_output}")
     elif rinfo.returncode != 0:
         failexit(f"Unexpected return from borg info {rinfo.returncode}")
 
