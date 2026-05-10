@@ -11,6 +11,10 @@ COOKIES="${COOKIES:-/sync/cookies.txt}"
 EXTRA_ARGS=(
   --extractor-args "youtubepot-bgutilhttp:base_url=$POT_BASE_URL"
   --remote-components ejs:github
+  --user-agent "Mozilla/5.0 (Macintosh; Intel Mac OS X 14.7; rv:128.0) Gecko/20100101 Firefox/128.0"
+  --sleep-requests 1.5
+  --min-sleep-interval 30
+  --max-sleep-interval 90
 )
 
 cd "$OUTPUT_DIR"
