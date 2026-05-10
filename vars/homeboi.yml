@@ -11,3 +11,28 @@ dns_name: "homeboi.{{ godaddy_hostname }}.{{ godaddy_domain }}"
 ytdlp_sync_subdir: dev/ytdlp
 ytdlp_download_dir: /bigboi/media/youtube
 ytdlp_sleep: 3600
+
+# Two APC UPSes plugged into the host via USB. The "server" UPS powers homeboi
+# itself and triggers graceful shutdown on low battery; the "network" UPS only
+# powers networking gear and is monitored but never shuts the host down.
+#
+# usb_id_product is the lsusb idProduct hex (vendor 051d = APC). Get it with:
+#   lsusb -d 051d:
+# If both UPSes turn out to share the same idProduct, also set usb_serial
+# (from `lsusb -v -d 051d:<id> | grep iSerial`) to disambiguate.
+upses:
+  - name: server
+    upsname: BR1500S
+    usb_serial: 0B2552L13098
+    nis_port: 3551
+    exporter_port: 9162
+    triggers_shutdown: true
+    battery_level: 15  # shutdown when battery % drops below this
+    minutes: 5         # shutdown when estimated runtime (min) drops below this
+    timeout: 0         # 0 = never shutdown solely on time-on-battery
+  - name: network
+    upsname: BE600M1
+    usb_serial: 4B2301P07253
+    nis_port: 3552
+    exporter_port: 9163
+    triggers_shutdown: false

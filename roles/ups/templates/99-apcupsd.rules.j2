@@ -1,0 +1,5 @@
+# Managed by ansible (roles/ups). Stable symlinks for APC USB UPSes so each
+# apcupsd instance always grabs its intended device regardless of plug order.
+{% for ups in upses %}
+KERNEL=="hiddev*", SUBSYSTEM=="usbmisc", ATTRS{idVendor}=="051d"{% if ups.usb_id_product is defined and ups.usb_id_product %}, ATTRS{idProduct}=="{{ ups.usb_id_product }}"{% endif %}{% if ups.usb_serial is defined and ups.usb_serial %}, ATTRS{serial}=="{{ ups.usb_serial }}"{% endif %}, SYMLINK+="usb/hiddev-{{ ups.name }}"
+{% endfor %}

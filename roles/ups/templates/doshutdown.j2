@@ -1,0 +1,17 @@
+#!/bin/sh
+# Managed by ansible (roles/ups). Replaces the default apccontrol doshutdown
+# action so only UPSes flagged as triggers_shutdown can power off the host.
+# apccontrol passes the UPS name as $2 and treats exit 99 as "handled,
+# skip default shutdown".
+
+UPSNAME="$2"
+
+case "$UPSNAME" in
+{% for ups in upses %}{% if not ups.triggers_shutdown %}    {{ ups.upsname }})
+        logger -t apcupsd "doshutdown ignored for {{ ups.upsname }} ({{ ups.name }} UPS does not power this host)"
+        exit 99
+        ;;
+{% endif %}{% endfor %}    *)
+        exit 0
+        ;;
+esac

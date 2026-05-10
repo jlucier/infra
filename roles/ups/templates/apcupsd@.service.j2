@@ -1,0 +1,16 @@
+[Unit]
+Description=apcupsd (instance %i)
+After=network.target
+# Don't run alongside the stock single-instance unit
+Conflicts=apcupsd.service
+
+[Service]
+Type=forking
+PIDFile=/run/apcupsd-%i.pid
+ExecStart=/sbin/apcupsd -f /etc/apcupsd/apcupsd-%i.conf -P /run/apcupsd-%i.pid
+ExecStop=/usr/bin/pkill -F /run/apcupsd-%i.pid
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

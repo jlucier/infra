@@ -1,0 +1,34 @@
+## Managed by ansible (roles/ups). UPS instance: {{ ups.name }}
+UPSNAME {{ ups.upsname }}
+UPSCABLE usb
+UPSTYPE usb
+DEVICE /dev/usb/hiddev-{{ ups.name }}
+
+POLLTIME 60
+LOCKFILE /var/lock
+SCRIPTDIR /etc/apcupsd
+PWRFAILDIR /etc/apcupsd
+NOLOGINDIR /etc
+
+ONBATTERYDELAY 6
+BATTERYLEVEL {{ ups.battery_level | default(0) }}
+MINUTES {{ ups.minutes | default(0) }}
+TIMEOUT {{ ups.timeout | default(0) }}
+ANNOY 300
+ANNOYDELAY 60
+NOLOGON disable
+KILLDELAY 0
+
+NETSERVER on
+NISIP 127.0.0.1
+NISPORT {{ ups.nis_port }}
+EVENTSFILE /var/log/apcupsd-{{ ups.name }}.events
+EVENTSFILEMAX 10
+
+UPSCLASS standalone
+UPSMODE disable
+
+STATTIME 0
+STATFILE /var/log/apcupsd-{{ ups.name }}.status
+LOGSTATS off
+DATATIME 0

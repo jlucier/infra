@@ -1,0 +1,14 @@
+[Unit]
+Description=apcupsd_exporter (instance %i)
+After=apcupsd@%i.service
+Requires=apcupsd@%i.service
+
+[Service]
+TimeoutStartSec=0
+EnvironmentFile=/etc/default/apcupsd_exporter-%i
+ExecStart=/usr/local/bin/apcupsd_exporter -telemetry.addr :${TELEMETRY_PORT} -apcupsd.addr ${APCUPSD_ADDR}
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

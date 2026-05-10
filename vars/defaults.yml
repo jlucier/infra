@@ -10,7 +10,7 @@ security_autoupdate_enabled: true
 
 # system ports
 node_exporter_http: 9100
-apcupsd_exporter_http: 9162
+# apcupsd exporter ports are configured per-UPS in the `upses` list
 
 # container ports for direct connection
 radarr_http: 7878

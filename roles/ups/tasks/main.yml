@@ -1,5 +1,5 @@
 ---
-- name: Install apcupsd
+- name: Install and configure apcupsd
   tags: ups
   block:
     - name: Install daemon
@@ -7,30 +7,79 @@
         name: apcupsd
         state: present
 
-    - name: Set up config
-      replace:
-        backup: true
-        path: /etc/apcupsd/apcupsd.conf
-        regexp: "{{ item.re }}"
-        replace: "{{ item.replace }}"
-      loop:
-        - { re: "^#UPSNAME$", replace: "UPSNAME BE600M1" }
-        - { re: "^DEVICE /dev.*$", replace: "DEVICE" }
-      register: config_file
-
-    - name: Set configured
-      replace:
-        backup: true
-        path: /etc/default/apcupsd
-        regexp: "^ISCONFIGURED=no$"
-        replace: "ISCONFIGURED=yes"
-      register: config_set
-
-    - name: Reload service
-      when: config_file.changed or config_set.changed
+    - name: Disable stock single-instance apcupsd unit
       systemd_service:
         name: apcupsd
+        state: stopped
+        enabled: false
+        masked: true
+
+    - name: Mark stock /etc/default/apcupsd as not configured
+      # Keeps the masked stock unit from doing anything if it ever gets unmasked.
+      replace:
+        path: /etc/default/apcupsd
+        regexp: "^ISCONFIGURED=yes$"
+        replace: "ISCONFIGURED=no"
+
+    - name: Install udev rule for stable UPS device symlinks
+      template:
+        src: 99-apcupsd.rules.j2
+        dest: /etc/udev/rules.d/99-apcupsd.rules
+        mode: "0644"
+      register: udev_rule
+
+    - name: Reload udev rules
+      when: udev_rule.changed
+      shell: udevadm control --reload-rules && udevadm trigger
+      changed_when: true
+
+    - name: Install UPSNAME-aware doshutdown override
+      template:
+        src: doshutdown.j2
+        dest: /etc/apcupsd/doshutdown
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Write per-UPS apcupsd configs
+      template:
+        src: apcupsd.conf.j2
+        dest: "/etc/apcupsd/apcupsd-{{ ups.name }}.conf"
+        owner: root
+        group: root
+        mode: "0644"
+      loop: "{{ upses }}"
+      loop_control:
+        loop_var: ups
+      register: ups_configs
+
+    - name: Install apcupsd@ systemd template unit
+      template:
+        src: apcupsd@.service.j2
+        dest: /etc/systemd/system/apcupsd@.service
+        mode: "0644"
+      register: apcupsd_unit
+
+    - name: Reload systemd if units changed
+      when: apcupsd_unit.changed
+      systemd_service:
+        daemon_reload: true
+
+    - name: Enable and start per-UPS apcupsd instances
+      systemd_service:
+        name: "apcupsd@{{ item.name }}.service"
+        enabled: true
+        state: started
+      loop: "{{ upses }}"
+
+    - name: Restart apcupsd instances whose config changed
+      when: item.changed
+      systemd_service:
+        name: "apcupsd@{{ item.ups.name }}.service"
         state: restarted
+      loop: "{{ ups_configs.results }}"
+      loop_control:
+        label: "{{ item.ups.name }}"
 
 - name: Install apcupsd exporter
   tags: ups
@@ -54,22 +103,40 @@
       register: build
       failed_when: build.rc != 0
 
-    - name: Install service
+    - name: Write per-UPS exporter env files
       template:
-        src: "files/apcupsd_exporter.service.j2"
-        dest: "/etc/systemd/system/apcupsd_exporter.service"
-      register: apcupsd_exporter_service
+        src: apcupsd_exporter.env.j2
+        dest: "/etc/default/apcupsd_exporter-{{ ups.name }}"
+        mode: "0644"
+      loop: "{{ upses }}"
+      loop_control:
+        loop_var: ups
+      register: exporter_envs
 
-    - name: Enable service
+    - name: Install apcupsd_exporter@ systemd template unit
+      template:
+        src: apcupsd_exporter@.service.j2
+        dest: /etc/systemd/system/apcupsd_exporter@.service
+        mode: "0644"
+      register: exporter_unit
+
+    - name: Reload systemd if exporter unit changed
+      when: exporter_unit.changed
       systemd_service:
-        name: apcupsd_exporter
         daemon_reload: true
+
+    - name: Enable and start per-UPS exporter instances
+      systemd_service:
+        name: "apcupsd_exporter@{{ item.name }}.service"
         enabled: true
         state: started
+      loop: "{{ upses }}"
 
-    - name: Bounce apcupsd_exporter_service
-      when: apcupsd_exporter_service.changed
+    - name: Restart exporters whose config changed
+      when: item.changed or exporter_unit.changed
       systemd_service:
-        name: apcupsd_exporter
-        daemon_reload: true
+        name: "apcupsd_exporter@{{ item.ups.name }}.service"
         state: restarted
+      loop: "{{ exporter_envs.results }}"
+      loop_control:
+        label: "{{ item.ups.name }}"

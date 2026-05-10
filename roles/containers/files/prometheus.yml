@@ -9,7 +9,16 @@ scrape_configs:
       - targets:
           - "host.docker.internal:{{ node_exporter_http }}" # node-exporter
           - "cadvisor:8080" # cAdvisor
-          - "host.docker.internal:{{ apcupsd_exporter_http }}" # ups
+
+  - job_name: ups
+    metrics_path: /metrics
+    static_configs:
+{% for ups in upses %}
+      - targets:
+          - "host.docker.internal:{{ ups.exporter_port }}"
+        labels:
+          ups_role: "{{ ups.name }}"
+{% endfor %}
 
   - job_name: drybox
     metrics_path: /metrics
