@@ -11,7 +11,7 @@ services:
       - SLEEP={{ ytdlp_sleep | default(3600) }}
     volumes:
       - "{{ docker_dir }}/ytdlp/data:/data"
-      - "{{ syncthing_sync_dir }}/{{ ytdlp_sync_subdir }}:/sync:ro"
+      - "{{ syncthing_sync_dir }}/{{ ytdlp_sync_subdir }}:/sync"
       - "{{ ytdlp_download_dir }}:/downloads"
     depends_on:
       ytdlp_wg:

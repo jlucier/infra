@@ -13,11 +13,6 @@ EXTRA_ARGS=(
   --remote-components ejs:github
 )
 
-if [ -s "$COOKIES" ]; then
-  EXTRA_ARGS+=(--cookies "$COOKIES")
-  echo "[ytdlp] using cookies from $COOKIES"
-fi
-
 cd "$OUTPUT_DIR"
 
 check_vpn() {
@@ -39,13 +34,17 @@ while true; do
   fi
 
   if [ -s "$INPUT" ]; then
+    RUN_ARGS=("${EXTRA_ARGS[@]}")
+    if [ -s "$COOKIES" ]; then
+      RUN_ARGS+=(--cookies "$COOKIES")
+    fi
     echo "[ytdlp] $(date -Is) running"
     yt-dlp \
       -a "$INPUT" \
       --download-archive "$ARCHIVE" \
       --embed-thumbnail \
       -o "%(playlist_title)s/%(title)s.%(ext)s" \
-      "${EXTRA_ARGS[@]}" \
+      "${RUN_ARGS[@]}" \
       || echo "[ytdlp] yt-dlp exited non-zero"
   else
     echo "[ytdlp] $(date -Is) input missing or empty, skipping"
