@@ -6,3 +6,8 @@ docker_dir: /fastboi/docker
 
 godaddy_hostname: jordan
 dns_name: "homeboi.{{ godaddy_hostname }}.{{ godaddy_domain }}"
+
+# ytdlp
+ytdlp_sync_subdir: dev/ytdlp
+ytdlp_download_dir: /bigboi/media/youtube
+ytdlp_sleep: 3600

@@ -1,0 +1,53 @@
+---
+- name: yt-dlp behind WireGuard
+  tags:
+    - containers
+    - ytdlp
+  block:
+    - name: Create ytdlp folders
+      become: true
+      file:
+        path: "{{ item }}"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        state: directory
+        mode: 0755
+      loop:
+        - "{{ docker_dir }}/ytdlp"
+        - "{{ docker_dir }}/ytdlp/data"
+        - "{{ ytdlp_download_dir }}"
+
+    - name: Ensure archive.txt exists
+      file:
+        path: "{{ docker_dir }}/ytdlp/data/archive.txt"
+        state: touch
+        modification_time: preserve
+        access_time: preserve
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        mode: 0644
+
+    - name: Sync ytdlp files
+      copy:
+        src: "files/ytdlp/{{ item.name }}"
+        dest: "{{ docker_dir }}/ytdlp/{{ item.name }}"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        mode: "{{ item.mode }}"
+      loop:
+        - { name: "Dockerfile", mode: "0644" }
+        - { name: "run.sh", mode: "0755" }
+        - { name: "wg0.conf", mode: "0600" }
+
+    - name: Template compose file
+      template:
+        src: "files/ytdlp/docker-compose.yml"
+        dest: "{{ docker_dir }}/ytdlp/docker-compose.yml"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        mode: 0644
+
+    - name: Run ytdlp compose
+      community.docker.docker_compose_v2:
+        project_src: "{{ docker_dir }}/ytdlp"
+        build: always

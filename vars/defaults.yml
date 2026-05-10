@@ -2,6 +2,8 @@ uid: "1000"
 guid: "1000"
 timezone: America/New_York
 
+syncthing_sync_dir: /bigboi/storage/syncs/sync
+
 ntp_timezone: "{{ timezone }}"
 node_exporter_version: "1.7.0"
 security_autoupdate_enabled: true
