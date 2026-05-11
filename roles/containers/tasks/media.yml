@@ -22,12 +22,18 @@
         - "radarr/config"
         - "sonarr/config"
         - "lidarr/config"
+        - "recyclarr/config"
         - "sabnzbd"
 
     - name: Install the docker compose file
       template:
         src: "files/media-compose.yml"
         dest: "{{ docker_dir }}/media/docker-compose.yml"
+
+    - name: Install recyclarr config
+      template:
+        src: "files/recyclarr.yml"
+        dest: "{{ docker_dir }}/media/recyclarr/config/recyclarr.yml"
 
     - name: Run compose project
       community.docker.docker_compose_v2:

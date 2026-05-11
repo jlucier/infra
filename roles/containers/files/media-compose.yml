@@ -100,6 +100,18 @@ services:
       - "traefik.http.routers.lidarr.entrypoints=https"
       - "traefik.http.routers.lidarr.tls.certresolver=godaddy"
 
+  recyclarr:
+    image: ghcr.io/recyclarr/recyclarr
+    container_name: recyclarr
+    user: "{{ uid }}"
+    environment:
+      - TZ=America/New_York
+    volumes:
+      - "{{ docker_dir }}/media/recyclarr/config:/config"
+    restart: unless-stopped
+    networks:
+      media:
+
   jellyfin:
     image: jellyfin/jellyfin
     container_name: jellyfin
