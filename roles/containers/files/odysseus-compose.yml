@@ -1,0 +1,147 @@
+# Managed by Ansible (roles/containers/tasks/odysseus.yml) -- do not edit on the host.
+#
+# Self-hosted Odysseus AI workspace (https://github.com/pewdiepie-archdaemon/odysseus)
+# plus its dependency stack, replacing the old anythingllm setup. Inference is
+# served by the local `ollama` container (GPU), reachable in-network at
+# http://ollama:11434. Odysseus itself runs CPU-only here -- it does not serve
+# models locally, it talks to ollama.
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
+    networks:
+      odysseus:
+    volumes:
+      - "{{ docker_dir }}/odysseus/ollama_cache:/root/.ollama"
+    environment:
+      - OLLAMA_KEEP_ALIVE=5m
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    runtime: nvidia
+
+  odysseus:
+    # Built from the git checkout in ./src (no published image upstream).
+    build: ./src
+    container_name: odysseus
+    restart: unless-stopped
+    networks:
+      odysseus:
+      proxy:
+    volumes:
+      - "./data:/app/data:z"
+      - "./logs:/app/logs:z"
+      - "./data/ssh:/app/.ssh:z"
+      - "./data/huggingface:/app/.cache/huggingface:z"
+      - "./data/local:/app/.local:z"
+    environment:
+      # --- Inference (local ollama) ---
+      - LLM_HOST=ollama
+      - OLLAMA_BASE_URL=http://ollama:11434/v1
+      # --- Bundled services (in-network) ---
+      - SEARXNG_INSTANCE=http://searxng:8080
+      - CHROMADB_HOST=chromadb
+      - CHROMADB_PORT=8000
+      # --- Embeddings: CPU fastembed fallback (downloads ~50MB on first run).
+      #     To offload onto ollama instead, pull an embed model there and set
+      #     EMBEDDING_URL=http://ollama:11434/v1/embeddings + EMBEDDING_MODEL. ---
+      - FASTEMBED_MODEL=sentence-transformers/all-MiniLM-L6-v2
+      # --- Auth / behind-Traefik-HTTPS hardening ---
+      - AUTH_ENABLED=true
+      - LOCALHOST_BYPASS=false
+      - SECURE_COOKIES=true
+      - ALLOWED_ORIGINS=https://odysseus.{{ dns_name }}
+      - ODYSSEUS_ADMIN_USER=admin
+      # Optional: pre-seed the admin password from vault. If unset, Odysseus
+      # prints a generated temp password to the container logs on first boot.
+      - ODYSSEUS_ADMIN_PASSWORD={{ odysseus_admin_password | default('') }}
+      - DATABASE_URL=sqlite:///./data/app.db
+      - PUID={{ uid }}
+      - PGID={{ guid }}
+    depends_on:
+      searxng:
+        condition: service_healthy
+      chromadb:
+        condition: service_started
+      ollama:
+        condition: service_started
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.odysseus.rule=Host(`odysseus.{{ dns_name }}`)"
+      - "traefik.http.routers.odysseus.entrypoints=https"
+      - "traefik.http.services.odysseus.loadbalancer.server.port=7000"
+      - "traefik.http.routers.odysseus.tls.certresolver=godaddy"
+
+  chromadb:
+    image: docker.io/chromadb/chroma:latest
+    container_name: odysseus-chromadb
+    restart: unless-stopped
+    networks:
+      odysseus:
+    volumes:
+      - "./chromadb:/chroma/chroma:z"
+    environment:
+      - ANONYMIZED_TELEMETRY=FALSE
+
+  searxng:
+    # Pinned (not :latest) -- odysseus gates on searxng's healthcheck, and a
+    # broken upstream tag would block the whole app from starting. Bump only
+    # after verifying a newer tag boots clean (see upstream compose comments).
+    image: docker.io/searxng/searxng:2026.5.31-7159b8aed
+    container_name: odysseus-searxng
+    restart: unless-stopped
+    networks:
+      odysseus:
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        set -eu
+        if [ ! -s /etc/searxng/settings.yml ] || grep -q 'odysseus-local-searxng-json-2026-05-30\|__SEARXNG_SECRET__' /etc/searxng/settings.yml; then
+          secret="$${SEARXNG_SECRET:-}"
+          if [ -z "$$secret" ]; then
+            secret="$$(python -c 'import secrets; print(secrets.token_urlsafe(48))')"
+          fi
+          sed "s|__SEARXNG_SECRET__|$$secret|g" /tmp/searxng-settings.yml.template > /etc/searxng/settings.yml
+        fi
+        exec /usr/local/searxng/entrypoint.sh
+    volumes:
+      - "./searxng:/etc/searxng:z"
+      - "./src/config/searxng/settings.yml:/tmp/searxng-settings.yml.template:ro,z"
+    environment:
+      - SEARXNG_BASE_URL=http://searxng:8080/
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+      - DAC_OVERRIDE
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8080/', timeout=5).read(1)\""]
+      interval: 5s
+      timeout: 6s
+      retries: 20
+      start_period: 10s
+
+  ntfy:
+    image: docker.io/binwiederhier/ntfy
+    container_name: odysseus-ntfy
+    restart: unless-stopped
+    command: serve
+    networks:
+      odysseus:
+    volumes:
+      - "./ntfy:/var/cache/ntfy:z"
+    environment:
+      - NTFY_BASE_URL=http://ntfy
+
+networks:
+  odysseus:
+  proxy:
+    external: true

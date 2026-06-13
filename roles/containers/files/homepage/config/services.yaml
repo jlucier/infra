@@ -32,10 +32,10 @@
         href: "https://it-tools.{{ dns_name }}"
         siteMonitor: "http://it-tools"
         icon: it-tools.svg
-    - AnythingLLM:
-        href: "https://llm.{{ dns_name }}"
-        siteMonitor: "http://llm"
-        icon: /images/anythingllm.png
+    - Odysseus:
+        href: "https://odysseus.{{ dns_name }}"
+        siteMonitor: "http://odysseus:7000"
+        icon: /images/odysseus.svg
     - MBTA:
         href: "https://mbta.{{ dns_name }}"
         icon: /images/mbta.png
