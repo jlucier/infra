@@ -1,0 +1,84 @@
+---
+- name: Configure AI Stack
+  tags:
+    - containers
+    - ai
+    - odysseus
+    - litellm
+    - llm
+  block:
+    # --- Migrate the old single-frontend `odysseus` project to the `ai` stack ---
+    # The stack was renamed (odysseus -> ai) and gained a second frontend
+    # (litellm). Bring the old compose project down and move its data dir so we
+    # keep downloaded ollama models, the odysseus DB, chromadb vectors, etc.
+    # `creates` makes the move a no-op once done and on fresh hosts.
+    - name: Check for old odysseus compose project
+      stat:
+        path: "{{ docker_dir }}/odysseus/docker-compose.yml"
+      register: old_odysseus_compose
+
+    - name: Bring down old odysseus stack (recreated below as the 'ai' project)
+      community.docker.docker_compose_v2:
+        project_src: "{{ docker_dir }}/odysseus"
+        state: absent
+        remove_orphans: true
+      when: old_odysseus_compose.stat.exists
+
+    - name: Migrate odysseus project dir to ai
+      become: true
+      command: mv "{{ docker_dir }}/odysseus" "{{ docker_dir }}/ai"
+      args:
+        creates: "{{ docker_dir }}/ai"
+      when: old_odysseus_compose.stat.exists
+
+    # --- AI stack ---
+    - name: Create and chmod ai folders
+      become: true
+      file:
+        path: "{{ item }}"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        state: directory
+        mode: 0755
+        recurse: true
+      loop:
+        - "{{ docker_dir }}/ai/ollama_cache"
+        - "{{ docker_dir }}/ai/data"
+        - "{{ docker_dir }}/ai/logs"
+        - "{{ docker_dir }}/ai/chromadb"
+        - "{{ docker_dir }}/ai/searxng"
+        - "{{ docker_dir }}/ai/ntfy"
+        - "{{ docker_dir }}/ai/litellm"
+        - "{{ docker_dir }}/ai/litellm-db"
+
+    - name: Clone/update odysseus source
+      become: true
+      become_user: "{{ username }}"
+      git:
+        repo: https://github.com/pewdiepie-archdaemon/odysseus.git
+        dest: "{{ docker_dir }}/ai/src"
+        version: main
+      register: odysseus_src
+
+    - name: Sync litellm config
+      become: true
+      template:
+        src: files/litellm-config.yaml
+        dest: "{{ docker_dir }}/ai/litellm/config.yaml"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        mode: 0600
+
+    - name: Sync compose file
+      become: true
+      template:
+        src: files/ai-compose.yml
+        dest: "{{ docker_dir }}/ai/docker-compose.yml"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        mode: 0600
+
+    - name: Run ai compose file
+      community.docker.docker_compose_v2:
+        project_src: "{{ docker_dir }}/ai"
+        build: always

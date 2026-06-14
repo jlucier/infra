@@ -1,19 +1,23 @@
-# Managed by Ansible (roles/containers/tasks/odysseus.yml) -- do not edit on the host.
+# Managed by Ansible (roles/containers/tasks/ai.yml) -- do not edit on the host.
 #
-# Self-hosted Odysseus AI workspace (https://github.com/pewdiepie-archdaemon/odysseus)
-# plus its dependency stack, replacing the old anythingllm setup. Inference is
-# served by the local `ollama` container (GPU), reachable in-network at
-# http://ollama:11434. Odysseus itself runs CPU-only here -- it does not serve
-# models locally, it talks to ollama.
+# Self-hosted AI stack. Inference is served by the local `ollama` container
+# (GPU), reachable only in-network at http://ollama:11434 -- it is deliberately
+# NOT exposed through Traefik. Two frontends sit in front of it, each exposed via
+# Traefik with its own auth:
+#   - odysseus: AI workspace (https://github.com/pewdiepie-archdaemon/odysseus),
+#       guarded by its own built-in account auth. CPU-only; talks to ollama.
+#   - litellm:  OpenAI-compatible gateway. Auth via its own master key + virtual
+#       keys (backed by the litellm-db Postgres), so you can mint/revoke a key
+#       per person for tools like opencode. Reachable at https://litellm.<dns>.
 services:
   ollama:
     image: ollama/ollama:latest
     container_name: ollama
     restart: unless-stopped
     networks:
-      odysseus:
+      ai:
     volumes:
-      - "{{ docker_dir }}/odysseus/ollama_cache:/root/.ollama"
+      - "{{ docker_dir }}/ai/ollama_cache:/root/.ollama"
     environment:
       - OLLAMA_KEEP_ALIVE=5m
     deploy:
@@ -25,13 +29,60 @@ services:
               capabilities: [gpu]
     runtime: nvidia
 
+  litellm:
+    image: ghcr.io/berriai/litellm-database:main-latest
+    container_name: litellm
+    restart: unless-stopped
+    networks:
+      ai:
+      proxy:
+    command: ["--config", "/app/config.yaml", "--port", "4000"]
+    volumes:
+      - "./litellm/config.yaml:/app/config.yaml:ro"
+    environment:
+      # Admin key (must start with sk-): logs into the UI at /ui and mints/revokes
+      # virtual keys via the API. Virtual keys + spend tracking need the DB below.
+      - LITELLM_MASTER_KEY={{ litellm_master_key }}
+      - DATABASE_URL=postgresql://litellm:{{ litellm_db_password }}@litellm-db:5432/litellm
+      - STORE_MODEL_IN_DB=True
+    depends_on:
+      litellm-db:
+        condition: service_healthy
+      ollama:
+        condition: service_started
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.litellm.rule=Host(`litellm.{{ dns_name }}`)"
+      - "traefik.http.routers.litellm.entrypoints=https"
+      - "traefik.http.services.litellm.loadbalancer.server.port=4000"
+      - "traefik.http.routers.litellm.tls.certresolver=godaddy"
+
+  litellm-db:
+    image: docker.io/postgres:16-alpine
+    container_name: litellm-db
+    restart: unless-stopped
+    networks:
+      ai:
+    volumes:
+      - "./litellm-db:/var/lib/postgresql/data:z"
+    environment:
+      - POSTGRES_USER=litellm
+      - POSTGRES_PASSWORD={{ litellm_db_password }}
+      - POSTGRES_DB=litellm
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U litellm -d litellm"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
   odysseus:
     # Built from the git checkout in ./src (no published image upstream).
     build: ./src
     container_name: odysseus
     restart: unless-stopped
     networks:
-      odysseus:
+      ai:
       proxy:
     volumes:
       - "./data:/app/data:z"
@@ -82,7 +133,7 @@ services:
     container_name: odysseus-chromadb
     restart: unless-stopped
     networks:
-      odysseus:
+      ai:
     volumes:
       - "./chromadb:/chroma/chroma:z"
     environment:
@@ -96,7 +147,7 @@ services:
     container_name: odysseus-searxng
     restart: unless-stopped
     networks:
-      odysseus:
+      ai:
     entrypoint:
       - /bin/sh
       - -c
@@ -135,13 +186,13 @@ services:
     restart: unless-stopped
     command: serve
     networks:
-      odysseus:
+      ai:
     volumes:
       - "./ntfy:/var/cache/ntfy:z"
     environment:
       - NTFY_BASE_URL=http://ntfy
 
 networks:
-  odysseus:
+  ai:
   proxy:
     external: true

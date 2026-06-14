@@ -1,0 +1,24 @@
+# Managed by Ansible (roles/containers/tasks/ai.yml) -- do not edit on the host.
+#
+# LiteLLM proxy config. Secrets (master key, database URL) are injected via the
+# environment in ai-compose.yml and referenced here as os.environ/... so they
+# never live in this file.
+model_list:
+  # Wildcard passthrough: every model pulled in the local ollama is exposed as
+  # itself, so a client asking for e.g. "qwen2.5-coder" is routed to
+  # ollama_chat/qwen2.5-coder (the /api/chat endpoint). No need to edit this
+  # file when you pull a new model -- just `ollama pull <name>`.
+  - model_name: "*"
+    litellm_params:
+      model: "ollama_chat/*"
+      api_base: "http://ollama:11434"
+  # If a tool needs the /v1/completions (FIM) path instead of chat, pin that
+  # model explicitly with the "ollama/" prefix, e.g.:
+  # - model_name: "qwen2.5-coder-fim"
+  #   litellm_params:
+  #     model: "ollama/qwen2.5-coder"
+  #     api_base: "http://ollama:11434"
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+  database_url: os.environ/DATABASE_URL

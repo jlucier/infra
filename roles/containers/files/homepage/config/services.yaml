@@ -36,6 +36,10 @@
         href: "https://odysseus.{{ dns_name }}"
         siteMonitor: "http://odysseus:7000"
         icon: /images/odysseus.svg
+    - LiteLLM:
+        href: "https://litellm.{{ dns_name }}/ui"
+        siteMonitor: "http://litellm:4000/health/liveliness"
+        icon: /images/litellm.svg
     - MBTA:
         href: "https://mbta.{{ dns_name }}"
         icon: /images/mbta.png
