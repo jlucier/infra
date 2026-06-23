@@ -1,0 +1,115 @@
+---
+# Fan control: reads GPU temp via nvidia-smi, writes PWM to the pump header
+# on the NCT6687 superio chip (MSI PRO B550-VC / MS-7C56).
+#
+# The stock nct6683 kernel driver exposes the NCT6687 read-only; this role
+# builds and installs the out-of-tree nct6687d driver (Fred78290/nct6687d)
+# which adds write support, then deploys a Python daemon and systemd service.
+
+- name: Install nct6687d DKMS driver
+  tags: fancontrol
+  block:
+    - name: Install build dependencies
+      apt:
+        name:
+          - build-essential
+          - dkms
+          - linux-headers-generic
+        state: present
+
+    - name: Clone nct6687d source
+      ansible.builtin.git:
+        repo: https://github.com/Fred78290/nct6687d.git
+        dest: /opt/nct6687d-src
+        version: main
+        update: true
+      register: nct6687d_repo
+
+    - name: Create DKMS source directory
+      ansible.builtin.file:
+        path: /usr/src/nct6687d-1
+        state: directory
+        mode: "0755"
+
+    - name: Copy nct6687d DKMS source files
+      ansible.builtin.copy:
+        src: "/opt/nct6687d-src/{{ item }}"
+        dest: /usr/src/nct6687d-1/
+        remote_src: true
+      loop:
+        - nct6687.c
+        - Makefile
+        - dkms.conf
+      register: dkms_source
+
+    - name: Remove previous nct6687d DKMS installation (source changed)
+      command: dkms remove -m nct6687d -v 1 --all
+      when: dkms_source.changed
+      failed_when: false
+      changed_when: true
+
+    - name: Install nct6687d via DKMS
+      command: dkms install -m nct6687d -v 1
+      when: dkms_source.changed
+
+- name: Configure kernel modules
+  tags: fancontrol
+  block:
+    - name: Blacklist nct6683 (conflicts with nct6687)
+      ansible.builtin.copy:
+        dest: /etc/modprobe.d/blacklist-nct6683.conf
+        content: "blacklist nct6683\n"
+        mode: "0644"
+
+    - name: Load nct6687 at boot
+      ansible.builtin.copy:
+        dest: /etc/modules-load.d/nct6687.conf
+        content: "nct6687\n"
+        mode: "0644"
+
+    - name: Unload nct6683 if currently loaded
+      command: modprobe -r nct6683
+      failed_when: false
+      changed_when: false
+
+    - name: Load nct6687 module now
+      command: modprobe nct6687
+      register: modprobe_result
+      changed_when: modprobe_result.rc == 0
+      failed_when: modprobe_result.rc != 0
+
+- name: Deploy fan control daemon
+  tags: fancontrol
+  block:
+    - name: Install gpu-fan script
+      ansible.builtin.template:
+        src: gpu-fan.py.j2
+        dest: /usr/local/bin/gpu-fan
+        owner: root
+        group: root
+        mode: "0755"
+      register: fan_script
+
+    - name: Install gpu-fan systemd unit
+      ansible.builtin.template:
+        src: gpu-fan.service.j2
+        dest: /etc/systemd/system/gpu-fan.service
+        mode: "0644"
+      register: fan_unit
+
+    - name: Reload systemd if unit changed
+      when: fan_unit.changed
+      ansible.builtin.systemd:
+        daemon_reload: true
+
+    - name: Enable and start gpu-fan service
+      ansible.builtin.systemd:
+        name: gpu-fan.service
+        enabled: true
+        state: started
+
+    - name: Restart gpu-fan if script or unit changed
+      when: fan_script.changed or fan_unit.changed
+      ansible.builtin.systemd:
+        name: gpu-fan.service
+        state: restarted

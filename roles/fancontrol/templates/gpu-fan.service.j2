@@ -1,0 +1,15 @@
+# Managed by Ansible — local edits will be overwritten.
+[Unit]
+Description=GPU temperature fan control (pump header)
+After=sysinit.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/gpu-fan
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

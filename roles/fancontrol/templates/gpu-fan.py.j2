@@ -1,0 +1,67 @@
+#!/usr/bin/env python3
+# Managed by Ansible — local edits will be overwritten.
+
+import glob
+import os
+import subprocess
+import sys
+import time
+
+GPU_INDEX = {{ gpu_fan_gpu_index | default(0) }}
+PWM_CHANNEL = {{ gpu_fan_pwm_channel }}
+POLL_INTERVAL = {{ gpu_fan_poll_interval | default(5) }}
+
+# (gpu_temp_celsius, pwm_0_to_255) breakpoints; linearly interpolated between points.
+CURVE = {{ gpu_fan_curve | to_json }}
+
+
+def gpu_temp() -> int:
+    out = subprocess.check_output(
+        ['nvidia-smi', '--query-gpu=temperature.gpu',
+         '--format=csv,noheader,nounits', f'-i={GPU_INDEX}'],
+        text=True,
+    )
+    return int(out.strip())
+
+
+def find_hwmon(chip: str) -> str:
+    for path in glob.glob('/sys/class/hwmon/hwmon*'):
+        try:
+            with open(os.path.join(path, 'name')) as f:
+                if f.read().strip() == chip:
+                    return path
+        except OSError:
+            continue
+    raise RuntimeError(f'hwmon device {chip!r} not found — is nct6687 loaded?')
+
+
+def interpolate(temp: int, curve: list) -> int:
+    if temp <= curve[0][0]:
+        return curve[0][1]
+    if temp >= curve[-1][0]:
+        return curve[-1][1]
+    for (t0, p0), (t1, p1) in zip(curve, curve[1:]):
+        if t0 <= temp <= t1:
+            frac = (temp - t0) / (t1 - t0)
+            return round(p0 + frac * (p1 - p0))
+    return curve[-1][1]
+
+
+def main():
+    hwmon = find_hwmon('nct6687')
+    pwm_path = os.path.join(hwmon, f'pwm{PWM_CHANNEL}')
+
+    while True:
+        try:
+            temp = gpu_temp()
+            target = interpolate(temp, CURVE)
+            with open(pwm_path, 'w') as f:
+                f.write(str(target))
+            print(f'gpu={temp}°C  pwm{PWM_CHANNEL}={target}/255', flush=True)
+        except Exception as exc:
+            print(f'error: {exc}', file=sys.stderr, flush=True)
+        time.sleep(POLL_INTERVAL)
+
+
+if __name__ == '__main__':
+    main()

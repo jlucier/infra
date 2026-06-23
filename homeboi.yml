@@ -32,6 +32,11 @@
       tags:
         - system
 
+    - role: roles/fancontrol
+      become: yes
+      tags:
+        - fancontrol
+
     - role: roles/backup
       become: yes
       tags:
