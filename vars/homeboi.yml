@@ -9,11 +9,11 @@
 # Curve breakpoints [gpu_temp_°C, pwm_0-255]. Linearly interpolated.
 # 100/255 ≈ 39% — treat as pump minimum to avoid bearing wear.
 gpu_fan_pwm_channel: 2
-gpu_fan_gpu_index: 0
+gpu_fan_gpu_index: 1
 gpu_fan_poll_interval: 5
 gpu_fan_curve:
   - [30, 0]
-  - [45, 80]
+  - [55, 80]
   - [65, 120]
   - [75, 200]
   - [80, 255]
