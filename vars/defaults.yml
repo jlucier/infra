@@ -20,3 +20,8 @@ prowlarr_http: 9696
 jellyfin_http: 8096
 grafana_http: 3000
 syncthing_http: 8384
+immich_http: 2283
+
+# "release" tracks Immich's stable channel; pin to a version tag if you want
+# to control upgrades manually.
+immich_version: release

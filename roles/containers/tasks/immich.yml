@@ -1,0 +1,40 @@
+---
+- name: Configure Immich
+  tags:
+    - containers
+    - immich
+    - photos
+  block:
+    - name: Create and chmod immich folders on fast storage
+      become: true
+      file:
+        path: "{{ docker_dir }}/immich/{{ item }}"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        state: directory
+        mode: 0755
+      loop:
+        - model-cache
+        - db
+
+    - name: Create immich managed library on bulk storage
+      become: true
+      file:
+        path: /bigboi/media/immich-library
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        state: directory
+        mode: 0755
+
+    - name: Sync compose file
+      become: true
+      template:
+        src: files/immich-compose.yml
+        dest: "{{ docker_dir }}/immich/docker-compose.yml"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        mode: 0600
+
+    - name: Run immich compose project
+      community.docker.docker_compose_v2:
+        project_src: "{{ docker_dir }}/immich"

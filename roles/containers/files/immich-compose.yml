@@ -1,0 +1,107 @@
+# Managed by Ansible (roles/containers/tasks/immich.yml) -- do not edit on the host.
+#
+# Standard Immich stack (server + ML + redis + postgres). Immich fully owns
+# and reorganizes whatever lives under UPLOAD_LOCATION, so it's pointed at
+# /bigboi/media/immich-library on the big/bulk storage pool -- not
+# fastboi/docker, which is small fast storage meant for app configs, and not
+# the existing /bigboi/media/photos|videos trees, which keep their own
+# hand-organized layout untouched. Model cache and the Postgres data dir stay
+# under docker_dir since they're small and benefit from the faster disk.
+#
+# To bring the existing /bigboi/media/photos and /videos libraries in,
+# migrate them with immich-go (https://github.com/simulot/immich-go) run
+# ad hoc against those source trees, targeting this server's API/key -- it
+# uploads into the managed library above, preserving EXIF dates and turning
+# folders into albums. That's a one-time migration job, not a persistent
+# service, so it's not wired into this compose file.
+#
+# immich-machine-learning shares GPU1 (the Tesla V100, board name
+# "PG500-216" in nvidia-smi) with ollama for CLIP/face-recognition inference
+# -- same device UUID ai-compose.yml pins ollama to. immich-server stays
+# CPU-only for now; add the same device reservation there too if you want
+# NVENC-accelerated transcoding later.
+services:
+  immich-server:
+    image: ghcr.io/immich-app/immich-server:{{ immich_version }}
+    container_name: immich-server
+    volumes:
+      - "/bigboi/media/immich-library:/usr/src/app/upload"
+      - "/etc/localtime:/etc/localtime:ro"
+    environment:
+      - DB_HOSTNAME=immich-db
+      - DB_USERNAME=immich
+      - DB_PASSWORD={{ immich_db_password }}
+      - DB_DATABASE_NAME=immich
+      - REDIS_HOSTNAME=immich-redis
+    restart: unless-stopped
+    depends_on:
+      immich-redis:
+        condition: service_started
+      immich-db:
+        condition: service_healthy
+    networks:
+      immich:
+      proxy:
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.immich.rule=Host(`immich.{{ dns_name }}`)"
+      - "traefik.http.routers.immich.entrypoints=https"
+      - "traefik.http.services.immich.loadbalancer.server.port=2283"
+      - "traefik.http.routers.immich.tls.certresolver=godaddy"
+
+  immich-machine-learning:
+    image: ghcr.io/immich-app/immich-machine-learning:{{ immich_version }}-cuda
+    container_name: immich-machine-learning
+    volumes:
+      - "{{ docker_dir }}/immich/model-cache:/cache"
+    environment:
+      - DB_HOSTNAME=immich-db
+      - DB_USERNAME=immich
+      - DB_PASSWORD={{ immich_db_password }}
+      - DB_DATABASE_NAME=immich
+      - REDIS_HOSTNAME=immich-redis
+    restart: unless-stopped
+    networks:
+      immich:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['{{ gpu_v100_uuid }}']
+              capabilities: [gpu]
+    runtime: nvidia
+
+  immich-redis:
+    image: docker.io/redis:6.2-alpine
+    container_name: immich-redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+    networks:
+      immich:
+
+  immich-db:
+    image: ghcr.io/immich-app/postgres:14-vectorchord0.3.0-pgvectors0.2.0
+    container_name: immich-db
+    environment:
+      - POSTGRES_USER=immich
+      - POSTGRES_PASSWORD={{ immich_db_password }}
+      - POSTGRES_DB=immich
+      - POSTGRES_INITDB_ARGS=--data-checksums
+    volumes:
+      - "{{ docker_dir }}/immich/db:/var/lib/postgresql/data"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U immich -d immich"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    networks:
+      immich:
+
+networks:
+  immich:
+  proxy:
+    external: true

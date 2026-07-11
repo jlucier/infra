@@ -1,4 +1,8 @@
 - Apps:
+    - Immich:
+        href: "https://immich.{{ dns_name }}"
+        siteMonitor: "http://immich-server:{{ immich_http }}"
+        icon: immich.svg
     - Jellyfin:
         href: "https://jellyfin.{{ dns_name }}"
         siteMonitor: "http://jellyfin:{{ jellyfin_http }}"

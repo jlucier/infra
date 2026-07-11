@@ -18,6 +18,13 @@ gpu_fan_curve:
   - [75, 200]
   - [80, 255]
 
+# GPU1: Tesla V100 (board name "PG500-216" in nvidia-smi). Shared by ollama
+# (ai-compose.yml) and immich-machine-learning (immich-compose.yml) via
+# explicit device UUID rather than index, since compose's device_ids is
+# more robust to enumeration order changes than a bare index would be.
+# Get with: nvidia-smi --query-gpu=index,uuid,name --format=csv
+gpu_v100_uuid: GPU-8b7684fd-7ddc-5abd-badd-bded4dfe50f0
+
 username: jordan
 local_ip: "{{ homeboi_ip }}"
 enable_nvidia_docker: true
