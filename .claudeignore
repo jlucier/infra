@@ -1,2 +1,2 @@
-**/vault.yml
+vars/vault.yml
 **/wg*.conf

@@ -132,6 +132,23 @@ services:
       - "traefik.http.routers.jellyfin.entrypoints=https"
       - "traefik.http.routers.jellyfin.tls.certresolver=godaddy"
 
+  navidrome:
+    image: deluan/navidrome:latest
+    container_name: navidrome
+    user: "{{ uid }}:{{ guid }}"
+    volumes:
+      - "{{ docker_dir }}/media/navidrome/data:/data"
+      - "/bigboi/media/music:/music:ro"
+    restart: unless-stopped
+    networks:
+      media:
+      proxy:
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.navidrome.rule=Host(`navidrome.{{ dns_name }}`)"
+      - "traefik.http.routers.navidrome.entrypoints=https"
+      - "traefik.http.routers.navidrome.tls.certresolver=godaddy"
+
 networks:
   media:
   proxy:

@@ -1,8 +1,13 @@
-- Apps:
+- Media:
     - Immich:
         href: "https://immich.{{ dns_name }}"
         siteMonitor: "http://immich-server:{{ immich_http }}"
         icon: immich.svg
+        widget:
+          type: immich
+          url: "http://immich-server:{{ immich_http }}"
+          key: "{{ immich_api_key }}"
+          version: 2
     - Jellyfin:
         href: "https://jellyfin.{{ dns_name }}"
         siteMonitor: "http://jellyfin:{{ jellyfin_http }}"
@@ -16,6 +21,18 @@
           enableUser: true # optional, defaults to false
           showEpisodeNumber: true # optional, defaults to false
           expandOneStreamToTwoRows: false # optional, defaults to true
+    - Navidrome:
+        href: "https://navidrome.{{ dns_name }}"
+        siteMonitor: "http://navidrome:4533"
+        icon: navidrome.svg
+        widget:
+          type: navidrome
+          url: "http://navidrome:4533"
+          user: "{{ navidrome_user }}"
+          token: "{{ navidrome_token }}"
+          salt: "{{ navidrome_salt }}"
+
+- Apps:
     - Syncthing:
         href: "https://syncthing.{{ dns_name }}"
         # could not manage to get this working with host.docker.internal

@@ -11,3 +11,8 @@ background:
 
 providers:
   openweathermap: "{{ openweathermap_api_key }}"
+
+layout:
+  Media:
+    style: row
+    columns: 3

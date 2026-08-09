@@ -24,6 +24,7 @@
         - "lidarr/config"
         - "recyclarr/config"
         - "sabnzbd"
+        - "navidrome/data"
 
     - name: Install the docker compose file
       template:
