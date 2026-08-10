@@ -25,6 +25,7 @@
         - "recyclarr/config"
         - "sabnzbd"
         - "navidrome/data"
+        - "navidrome/data/backup"
 
     - name: Install the docker compose file
       template:
@@ -35,6 +36,12 @@
       template:
         src: "files/recyclarr.yml"
         dest: "{{ docker_dir }}/media/recyclarr/config/recyclarr.yml"
+
+    - name: Install navidrome config
+      template:
+        src: "files/navidrome.toml"
+        dest: "{{ docker_dir }}/media/navidrome/data/navidrome.toml"
+      notify: restart navidrome
 
     - name: Run compose project
       community.docker.docker_compose_v2:

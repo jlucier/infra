@@ -1,0 +1,49 @@
+# Navidrome server config. Loaded via ND_CONFIGFILE in media-compose.yml --
+# the image does not pick this file up on its own. Env vars override anything
+# set here.
+#
+# Only deviations from the upstream defaults are set, so that defaults we are
+# happy with keep tracking upstream. Full list of options:
+# https://www.navidrome.org/docs/usage/configuration/options/
+
+MusicFolder = '/music'
+DataFolder = '/data'
+
+# ---------- Scanning ----------
+
+# The file watcher handles day-to-day changes; this is a safety net for what it
+# misses. Default is no periodic scan.
+Scanner.Schedule = '@every 24h'
+
+# Role tags (PERFORMER, COMPOSER, ...) split on a bare '/', which would turn
+# AC/DC into two artists.
+Scanner.ArtistSplitExceptions = 'AC/DC'
+
+# Sort by SORT_* tags where present. Default false.
+PreferSortTags = true
+
+# ---------- External metadata ----------
+
+# Default order. Deezer and ListenBrainz need no setup; Last.fm is the only
+# built-in agent that supplies album covers and needs a key from
+# https://www.last.fm/api/account/create (vault: navidrome_lastfm_*).
+Agents = 'deezer,lastfm,listenbrainz'
+LastFM.ApiKey = '{{ navidrome_lastfm_api_key | default('') }}'
+LastFM.Secret = '{{ navidrome_lastfm_secret | default('') }}'
+
+# ---------- Artwork ----------
+
+# CoverArtPriority and ArtistArtPriority keep their defaults, which match the
+# Picard workflow: cover.jpg beside the tracks, artist.jpg in the artist folder,
+# embedded art after both, external agents last.
+CoverArtQuality = 80      # default 75
+UICoverArtSize = 600      # default 300
+ImageCacheSize = '500MB'  # default 100MB
+
+# ---------- Database backups ----------
+
+# Lives inside DataFolder, so the existing borg job for fastboi/docker picks it
+# up. All three default to disabled.
+Backup.Path = '/data/backup'
+Backup.Schedule = '0 3 * * *'
+Backup.Count = 7

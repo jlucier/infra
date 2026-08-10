@@ -10,3 +10,9 @@
     name: homepage
     restart: yes
     state: started
+
+- name: restart navidrome
+  docker_container:
+    name: navidrome
+    restart: yes
+    state: started

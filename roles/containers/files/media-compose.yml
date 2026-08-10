@@ -136,6 +136,8 @@ services:
     image: deluan/navidrome:latest
     container_name: navidrome
     user: "{{ uid }}:{{ guid }}"
+    environment:
+      - ND_CONFIGFILE=/data/navidrome.toml
     volumes:
       - "{{ docker_dir }}/media/navidrome/data:/data"
       - "/bigboi/media/music:/music:ro"
