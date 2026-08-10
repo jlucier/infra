@@ -105,7 +105,6 @@
           type: radarr
           url: "http://radarr:{{ radarr_http }}"
           key: "{{ radarr_api_key }}"
-          enableQueue: true
     - Sonarr:
         href: "https://sonarr.{{ dns_name }}"
         siteMonitor: "http://sonarr:{{ sonarr_http }}"
