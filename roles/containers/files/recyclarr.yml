@@ -5,7 +5,7 @@
 ##
 ## Sources:
 ##   https://trash-guides.info/Radarr/radarr-setup-quality-profiles/#hd-bluray-web
-##   https://trash-guides.info/Radarr/radarr-setup-quality-profiles/#uhd-bluray-web
+##   https://trash-guides.info/Radarr/radarr-setup-quality-profiles/
 ##   https://trash-guides.info/Sonarr/sonarr-setup-quality-profiles/#web-1080p
 ##   https://trash-guides.info/Sonarr/sonarr-setup-quality-profiles/#web-2160p
 ################################################################################
@@ -22,7 +22,16 @@ radarr:
       - trash_id: d1d67249d3890e49bc12e275d989a7e9  # HD Bluray + WEB
         reset_unmatched_scores:
           enabled: true
-      - trash_id: 64fb5f9858489bdac2af690e27c8f42f  # UHD Bluray + WEB
+      # Covers Remux-2160p down to WEB-1080p in one profile
+      # BR-DISK, DVD, TELESYNC, DVDSCR, SDTV and 720p are excluded and get replaced.
+      # TRaSH ships this profile with the cutoff at Remux-2160p. Capped at
+      # Bluray-2160p instead: upgrading the whole library to remux is ~23 TB.
+      # Remux-2160p stays allowed and ranked top, so existing remuxes are kept.
+      - trash_id: d1d310673359205736b4b84acd5ea8c8  # Remux 2160p (Combined)
+        upgrade:
+          allowed: true
+          until_quality: Bluray-2160p
+          until_score: 10000
         reset_unmatched_scores:
           enabled: true
 
