@@ -61,6 +61,10 @@ services:
     image: docker.io/postgres:16-alpine
     container_name: litellm-db
     restart: unless-stopped
+    # Pinned to the image's current `postgres` account uid/gid so the data
+    # directory's ownership has a fixed target, independent of whatever the
+    # base image's postgres account happens to map to on a given day.
+    user: "70:70"
     networks:
       ai:
     volumes:

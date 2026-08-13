@@ -7,30 +7,6 @@
     - litellm
     - llm
   block:
-    # --- Migrate the old single-frontend `odysseus` project to the `ai` stack ---
-    # The stack was renamed (odysseus -> ai) and gained a second frontend
-    # (litellm). Bring the old compose project down and move its data dir so we
-    # keep downloaded ollama models, the odysseus DB, chromadb vectors, etc.
-    # `creates` makes the move a no-op once done and on fresh hosts.
-    - name: Check for old odysseus compose project
-      stat:
-        path: "{{ docker_dir }}/odysseus/docker-compose.yml"
-      register: old_odysseus_compose
-
-    - name: Bring down old odysseus stack (recreated below as the 'ai' project)
-      community.docker.docker_compose_v2:
-        project_src: "{{ docker_dir }}/odysseus"
-        state: absent
-        remove_orphans: true
-      when: old_odysseus_compose.stat.exists
-
-    - name: Migrate odysseus project dir to ai
-      become: true
-      command: mv "{{ docker_dir }}/odysseus" "{{ docker_dir }}/ai"
-      args:
-        creates: "{{ docker_dir }}/ai"
-      when: old_odysseus_compose.stat.exists
-
     # --- AI stack ---
     - name: Create and chmod ai folders
       become: true
@@ -49,7 +25,20 @@
         - "{{ docker_dir }}/ai/searxng"
         - "{{ docker_dir }}/ai/ntfy"
         - "{{ docker_dir }}/ai/litellm"
-        - "{{ docker_dir }}/ai/litellm-db"
+
+    # Not in the loop above: that one recurses and would repeatedly clobber
+    # ownership/perms on every file Postgres manages inside its own data dir.
+    # Only the top-level directory needs to exist with the right owner before
+    # first init -- owner/group here must match the `user:` pinned on the
+    # litellm-db service in ai-compose.yml.
+    - name: Create litellm-db data dir
+      become: true
+      file:
+        path: "{{ docker_dir }}/ai/litellm-db"
+        owner: "70"
+        group: "70"
+        state: directory
+        mode: 0700
 
     - name: Clone/update odysseus source
       become: true
