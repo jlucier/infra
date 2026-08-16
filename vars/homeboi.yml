@@ -18,6 +18,17 @@ gpu_fan_curve:
   - [75, 200]
   - [80, 255]
 
+# The NVIDIA driver stays on the 580.xx branch. The 595 branch moved Volta to
+# legacy and refuses to claim the V100, leaving only the GTX 1650 usable
+# ("NVRM: ignoring the legacy GPU 0000:2b:00.0" at boot). 580.173.02 is the
+# newest branch that drives both cards, and Volta is not coming back.
+#
+# The driver is installed by hand, not by Ansible -- the docker role manages
+# only nvidia-docker2. The 580 packages are pinned with apt-mark hold, so
+# installing a newer branch fails on the held packages instead of silently
+# dropping the V100. Taking a 580.x point release needs an explicit unhold,
+# upgrade, and re-hold.
+#
 # GPU1: Tesla V100 (board name "PG500-216" in nvidia-smi). Shared by ollama
 # (ai-compose.yml) and immich-machine-learning (immich-compose.yml) via
 # explicit device UUID rather than index, since compose's device_ids is
@@ -38,9 +49,9 @@ ytdlp_sync_subdir: dev/ytdlp
 ytdlp_download_dir: /bigboi/media/youtube
 ytdlp_sleep: 3600
 
-# Two APC UPSes plugged into the host via USB. The "server" UPS powers homeboi
-# itself and triggers graceful shutdown on low battery; the "network" UPS only
-# powers networking gear and is monitored but never shuts the host down.
+# APC UPS plugged into the host via USB. The "server" UPS powers homeboi
+# itself and triggers graceful shutdown on low battery.
+# (The "network" UPS below is no longer physically connected.)
 #
 # usb_id_product is the lsusb idProduct hex (vendor 051d = APC). Get it with:
 #   lsusb -d 051d:
@@ -56,9 +67,10 @@ upses:
     battery_level: 15  # shutdown when battery % drops below this
     minutes: 5         # shutdown when estimated runtime (min) drops below this
     timeout: 0         # 0 = never shutdown solely on time-on-battery
-  - name: network
-    upsname: BE600M1
-    usb_serial: 4B2301P07253
-    nis_port: 3552
-    exporter_port: 9163
-    triggers_shutdown: false
+  # "network" UPS is no longer hooked up
+  # - name: network
+  #   upsname: BE600M1
+  #   usb_serial: 4B2301P07253
+  #   nis_port: 3552
+  #   exporter_port: 9163
+  #   triggers_shutdown: false
