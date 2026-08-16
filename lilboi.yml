@@ -1,0 +1,71 @@
+- name: Lilboi Fedora server setup
+  hosts: lilboi
+  vars_files:
+    - vars/defaults.yml
+    - vars/vault.yml
+    - vars/lilboi.yml
+  tasks:
+    # https://openzfs.github.io/openzfs-docs/Getting%20Started/Fedora/index.html
+    - name: Install ZFS (OpenZFS DKMS)
+      become: yes
+      tags:
+        - zfs
+      block:
+        - name: Remove unmaintained zfs-fuse
+          dnf:
+            name: zfs-fuse
+            state: absent
+
+        - name: Add the OpenZFS repo
+          dnf:
+            name: "https://zfsonlinux.org/fedora/zfs-release-3-1.fc{{ ansible_distribution_major_version }}.noarch.rpm"
+            state: present
+            disable_gpg_check: yes
+
+        # DKMS needs these present *before* the zfs package is built
+        - name: Install kernel headers for the running kernel
+          dnf:
+            name: "kernel-devel-{{ ansible_kernel.split('-')[0] }}"
+            state: present
+            update_cache: yes
+
+        - name: Install zfs
+          dnf:
+            name: zfs
+            state: present
+
+        - name: Load the zfs module
+          community.general.modprobe:
+            name: zfs
+            state: present
+            persistent: present
+
+        - name: Protect zfs from being removed by dnf on kernel updates
+          copy:
+            content: "zfs\n"
+            dest: /etc/dnf/protected.d/zfs.conf
+            mode: '0644'
+
+    - name: Install wireguard
+      become: yes
+      dnf:
+        name: wireguard-tools
+        state: present
+        update_cache: yes
+
+    - name: Copy WireGuard config to server
+      become: yes
+      no_log: true
+      copy:
+        src: "{{ wireguard_config_path }}"
+        dest: /etc/wireguard/wg0.conf
+        mode: '0600'
+        backup: yes
+
+    - name: Enable and start WireGuard service
+      become: yes
+      systemd:
+        name: wg-quick@wg0.service
+        enabled: yes
+        state: started
+        daemon_reload: yes

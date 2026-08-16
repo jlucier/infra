@@ -2,6 +2,7 @@
   hosts: homeboi
   vars_files:
     - vars/defaults.yml
+    - vars/dns.yml
     - vars/homeboi.yml
     - vars/vault.yml
   roles:
@@ -48,6 +49,17 @@
         - ups
 
     - role: roles/containers
+
+    # Must follow roles/containers: the reload handler shells into the running
+    # pihole container.
+    - role: roles/pihole_records
+      vars:
+        pihole_dnsmasq_dir: "{{ docker_dir }}/pihole/etc-dnsmasq.d"
+        pihole_reload_cmd: docker restart pihole
+      tags:
+        - containers
+        - pihole
+
     - role: roles/gameservers
 
     - role: roles/mbtaweb

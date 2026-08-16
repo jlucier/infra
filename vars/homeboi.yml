@@ -31,8 +31,7 @@ enable_nvidia_docker: true
 
 docker_dir: /fastboi/docker
 
-godaddy_hostname: jordan
-dns_name: "homeboi.{{ godaddy_hostname }}.{{ godaddy_domain }}"
+# godaddy_hostname / dns_name now live in vars/dns.yml, shared with failhole.
 
 # ytdlp
 ytdlp_sync_subdir: dev/ytdlp

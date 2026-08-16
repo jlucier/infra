@@ -1,0 +1,5 @@
+---
+# Defaults describe a native Pi-hole install (failhole). homeboi runs Pi-hole
+# in Docker against a bind mount and overrides both of these.
+pihole_dnsmasq_dir: /etc/dnsmasq.d
+pihole_reload_cmd: systemctl restart pihole-FTL

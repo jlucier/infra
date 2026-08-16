@@ -1,0 +1,13 @@
+- name: Failhole (secondary Pi-hole)
+  hosts: failhole
+  vars_files:
+    - vars/defaults.yml
+    - vars/dns.yml
+    - vars/vault.yml
+  roles:
+    # Native Pi-hole install, so the role defaults apply unchanged. Keep these
+    # records identical to homeboi's -- nebula-sync replicates Pi-hole's own
+    # config over the API but never touches /etc/dnsmasq.d.
+    - role: roles/pihole_records
+      tags:
+        - pihole

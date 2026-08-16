@@ -1,0 +1,10 @@
+---
+- name: Sync local dnsmasq records
+  become: true
+  template:
+    src: 10-homeboi.conf.j2
+    dest: "{{ pihole_dnsmasq_dir }}/10-homeboi.conf"
+    owner: root
+    group: root
+    mode: 0644
+  notify: reload pihole dns

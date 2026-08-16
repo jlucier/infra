@@ -1,0 +1,9 @@
+---
+- name: reload pihole dns
+  # Pi-hole v6 has no `restartdns`, and `reloaddns` only refreshes lists and
+  # flushes the cache -- it explicitly does NOT re-read /etc/dnsmasq.d, so
+  # record changes need a full FTL restart to take effect.
+  become: true
+  ansible.builtin.command:
+    cmd: "{{ pihole_reload_cmd }}"
+  changed_when: true

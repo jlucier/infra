@@ -36,6 +36,7 @@ services:
       FULL_SYNC: true
       RUN_GRAVITY: true
       CRON: "0 * * * *"
+      CLIENT_SKIP_TLS_VERIFICATION: true
     networks:
       pihole:
 
