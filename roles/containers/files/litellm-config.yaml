@@ -4,20 +4,41 @@
 # in the environment. This file reads them back as os.environ/..., so no secret
 # is stored here.
 model_list:
+  # Reasoning-effort routes.
+  #
+  # Some apps have no setting for reasoning_effort on a local ollama endpoint. So
+  # each route below pins one effort level, and the caller picks a level when
+  # it picks a model name. Ollama returns the thinking text as reasoning_content,
+  # which odysseus reads back.
+  #
+  # The Qwen3.8 chat template accepts three levels: low, medium and xhigh. It
+  # uses xhigh when nobody sets a level, so the plain model name through the
+  # wildcard route below already runs at xhigh. Only the two lower levels need
+  # a route here.
+  #
+  # Do not add an "xhigh" route. Ollama 0.33.2 rewrites xhigh, ultra and max to
+  # "max", which the template does not know, and the call fails with an HTTP
+  # 500. Retest this after an ollama upgrade or a new model.
+  - model_name: "qwen3.8-27b-low"
+    litellm_params:
+      model: "ollama_chat/hf.co/unsloth/Qwen3.8-27B-GGUF:UD-Q6_K_XL"
+      api_base: "http://ollama:11434"
+      reasoning_effort: "low"
+  - model_name: "qwen3.8-27b-medium"
+    litellm_params:
+      model: "ollama_chat/hf.co/unsloth/Qwen3.8-27B-GGUF:UD-Q6_K_XL"
+      api_base: "http://ollama:11434"
+      reasoning_effort: "medium"
+
   # A wildcard route. Every model in the local ollama keeps its own name, so a
   # request for "qwen2.5-coder" goes to ollama_chat/qwen2.5-coder, which is the
   # /api/chat endpoint. A new model needs no change here. Run
-  # `ollama pull <name>` only.
+  # `ollama pull <name>` only. This route sends no reasoning_effort, so each
+  # model uses its own default.
   - model_name: "*"
     litellm_params:
       model: "ollama_chat/*"
       api_base: "http://ollama:11434"
-  # If a tool needs the /v1/completions (FIM) path instead of the chat path,
-  # add that model here with the "ollama/" prefix. For example:
-  # - model_name: "qwen2.5-coder-fim"
-  #   litellm_params:
-  #     model: "ollama/qwen2.5-coder"
-  #     api_base: "http://ollama:11434"
 
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY
