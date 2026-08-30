@@ -22,11 +22,11 @@ radarr:
       - trash_id: d1d67249d3890e49bc12e275d989a7e9  # HD Bluray + WEB
         reset_unmatched_scores:
           enabled: true
-      # Covers Remux-2160p down to WEB-1080p in one profile
-      # BR-DISK, DVD, TELESYNC, DVDSCR, SDTV and 720p are excluded and get replaced.
-      # TRaSH ships this profile with the cutoff at Remux-2160p. Capped at
-      # Bluray-2160p instead: upgrading the whole library to remux is ~23 TB.
-      # Remux-2160p stays allowed and ranked top, so existing remuxes are kept.
+      # One profile that covers Remux-2160p down to WEB-1080p. It excludes
+      # BR-DISK, DVD, TELESYNC, DVDSCR, SDTV, and 720p, and replaces them.
+      # TRaSH sets the cutoff at Remux-2160p. This cap is Bluray-2160p instead,
+      # because a whole library of remuxes needs about 23 TB. Remux-2160p is
+      # still allowed and still ranks first, so the existing remuxes stay.
       - trash_id: d1d310673359205736b4b84acd5ea8c8  # Remux 2160p (Combined)
         upgrade:
           allowed: true
@@ -40,10 +40,10 @@ radarr:
         - trash_id: f8bf8eab4617f12dfdbd16303d8da245  # [Optional] Golden Rule HD
         - trash_id: ff204bbcecdd487d1cefcefdbf0c278d  # [Optional] Golden Rule UHD
         - trash_id: a3ac6af01d78e4f21fcb75f601ac96df  # [Unwanted] Unwanted Formats
-        # Apple TV friendliness: avoid the formats that break direct play.
+        # Skip the formats that break direct play on the Apple TV.
         - trash_id: 9337080378236ce4c0b183e35790d2a7  # [Optional] Miscellaneous
           select:
-            - f700d29429c023a5734505e77daeaea7  # DV (Disk) — P7 FEL, breaks Apple TV
+            - f700d29429c023a5734505e77daeaea7  # DV (Disk), P7 FEL, breaks Apple TV
             - 73613461ac2cea99d52c4cd6e177ab82  # HFR
 
 sonarr:
@@ -68,8 +68,8 @@ sonarr:
         - trash_id: e3f37512790f00d0e89e54fe5e790d1c  # [Optional] Golden Rule UHD
         - trash_id: 85fae4a2294965b75710ef2989c850eb  # [Streaming Services] HD/UHD boost
         - trash_id: 59c3af66780d08332fdc64e68297098f  # [Unwanted] Unwanted Formats
-        # Apple TV friendliness: avoid the formats that break direct play.
+        # Skip the formats that break direct play on the Apple TV.
         - trash_id: f4a0410a1df109a66d6e47dcadcce014  # [Optional] Miscellaneous
           select:
-            - ef4963043b0987f8485bc9106f16db38  # DV (Disk) — P7 FEL, breaks Apple TV
+            - ef4963043b0987f8485bc9106f16db38  # DV (Disk), P7 FEL, breaks Apple TV
             - 1bd69272e23c5e6c5b1d6c8a36fce95e  # HFR

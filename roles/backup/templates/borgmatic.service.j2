@@ -5,10 +5,9 @@ After=network-online.target
 
 [Service]
 Type=oneshot
-# Backups are never urgent enough to compete with anything the box is serving.
+# Give the backup a low priority. The services on this host come first.
 Nice=19
 IOSchedulingClass=best-effort
 IOSchedulingPriority=7
-# Non-zero exit here is a real failure signal: cron mail and, once the ntfy hook
-# lands, the phone.
+# A non-zero exit is a real failure. It sends cron mail.
 ExecStart={{ borgmatic_bin }} --verbosity -1 --syslog-verbosity 1

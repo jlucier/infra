@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# Configuration
 DOWNLOAD_DIRS=(
     "/bigboi/media/downloads/sab/complete"
     "/bigboi/media/downloads/qbit/complete"
@@ -11,22 +10,20 @@ MEDIA_DIRS=(
     "/bigboi/media/tv"
 )
 
-# Minimum age in minutes before considering a file for cleanup
+# A file must be at least this many minutes old before cleanup touches it.
 MIN_AGE_MINUTES=60
 
-# Dry run mode - set to 1 to see what would be deleted without actually deleting
+# Set to 1 to log what the script would delete, and delete nothing.
 DRY_RUN=0
 
-# Parallelization - number of concurrent jobs (0 = auto-detect CPU cores)
+# Number of parallel jobs. 0 means one job per CPU core.
 PARALLEL_JOBS=0
 
-# Logging
 LOG_FILE="/var/log/hardlink-cleanup.log"
-LOG_MAX_SIZE_MB=10  # Rotate when log exceeds this size
-LOG_MAX_BACKUPS=2   # Keep this many old log files
+LOG_MAX_SIZE_MB=10  # Rotate the log when it passes this size.
+LOG_MAX_BACKUPS=2   # Number of old log files to keep.
 VERBOSE=0
 
-# Rotate logs if needed
 rotate_logs() {
     if [ ! -f "$LOG_FILE" ]; then
         return
@@ -36,22 +33,19 @@ rotate_logs() {
     local max_size=$((LOG_MAX_SIZE_MB * 1024 * 1024))
 
     if [ "$log_size" -gt "$max_size" ]; then
-        # Remove oldest backup if we're at max
         if [ -f "${LOG_FILE}.${LOG_MAX_BACKUPS}" ]; then
             rm "${LOG_FILE}.${LOG_MAX_BACKUPS}"
         fi
 
-        # Rotate existing backups
         for i in $(seq $((LOG_MAX_BACKUPS - 1)) -1 1); do
             if [ -f "${LOG_FILE}.${i}" ]; then
                 mv "${LOG_FILE}.${i}" "${LOG_FILE}.$((i + 1))"
             fi
         done
 
-        # Rotate current log
         mv "$LOG_FILE" "${LOG_FILE}.1"
 
-        # Compress old logs (optional)
+        # Compress the old logs.
         if command -v gzip &> /dev/null; then
             for i in $(seq 2 $LOG_MAX_BACKUPS); do
                 if [ -f "${LOG_FILE}.${i}" ] && [ ! -f "${LOG_FILE}.${i}.gz" ]; then
@@ -70,13 +64,11 @@ log() {
     fi
 }
 
-# Export functions and variables for parallel
 export MEDIA_DIRS
 export MIN_AGE_MINUTES
 export DRY_RUN
 export LOG_FILE
 
-# Function to find hardlink target in media directories
 find_hardlink_target() {
     local file="$1"
     local inode=$(stat -c '%i' "$file" 2>/dev/null || stat -f '%i' "$file" 2>/dev/null)
@@ -85,13 +77,11 @@ find_hardlink_target() {
         return 1
     fi
 
-    # Search media directories for files with same inode
     for media_dir in "${MEDIA_DIRS[@]}"; do
         if [ ! -d "$media_dir" ]; then
             continue
         fi
 
-        # Find files with same inode in media directory
         local target=$(find "$media_dir" -inum "$inode" -type f 2>/dev/null | while read -r f; do
             [ "$f" != "$file" ] && echo "$f" && break
         done)
@@ -106,7 +96,6 @@ find_hardlink_target() {
 }
 export -f find_hardlink_target
 
-# Function to check if file is old enough
 is_old_enough() {
     local file="$1"
     local current_time=$(date +%s)
@@ -117,28 +106,26 @@ is_old_enough() {
 }
 export -f is_old_enough
 
-# Function to get human-readable size
 get_size() {
     local file="$1"
     du -h "$file" 2>/dev/null | cut -f1
 }
 export -f get_size
 
-# Process a single file (to be run in parallel)
+# Process one file. parallel runs many copies of this function at once.
 process_file() {
     local file="$1"
 
-    # Check if file is old enough
     if ! is_old_enough "$file"; then
         return 0
     fi
 
-    # Get link count (number of hardlinks)
+    # Count the hardlinks.
     local link_count=$(stat -c '%h' "$file" 2>/dev/null || stat -f '%l' "$file" 2>/dev/null)
 
-    # If link count > 1, file has hardlinks
+    # More than one link means the file is hardlinked.
     if [ "$link_count" -gt 1 ]; then
-        # Find the hardlink target in media directories
+        # Find the other link under the media directories.
         local target=$(find_hardlink_target "$file")
 
         if [ -n "$target" ]; then
@@ -161,14 +148,12 @@ process_file() {
 }
 export -f process_file
 
-# Main cleanup function
 cleanup_hardlinks() {
     local temp_results=$(mktemp)
     local files_processed=0
     local files_deleted=0
     local total_freed=0
 
-    # Check if GNU parallel is available
     if ! command -v parallel &> /dev/null; then
         log "ERROR: GNU parallel not found. Install with: sudo apt-get install parallel"
         log "Falling back to sequential processing..."
@@ -185,7 +170,6 @@ cleanup_hardlinks() {
 
         log "Processing directory: $download_dir"
 
-        # Build file list
         local file_list=$(mktemp)
         find "$download_dir" -type f > "$file_list"
         files_processed=$(wc -l < "$file_list")
@@ -193,7 +177,6 @@ cleanup_hardlinks() {
         log "Found $files_processed files to check"
 
         if [ $USE_PARALLEL -eq 1 ]; then
-            # Process files in parallel
             local jobs_flag=""
             if [ $PARALLEL_JOBS -gt 0 ]; then
                 jobs_flag="-j $PARALLEL_JOBS"
@@ -201,7 +184,7 @@ cleanup_hardlinks() {
 
             parallel $jobs_flag process_file :::: "$file_list" >> "$temp_results"
         else
-            # Sequential fallback
+            # No parallel, so process the files one at a time.
             while IFS= read -r file; do
                 process_file "$file" >> "$temp_results"
             done < "$file_list"
@@ -210,7 +193,6 @@ cleanup_hardlinks() {
         rm "$file_list"
     done
 
-    # Parse results
     while IFS='|' read -r action file rest; do
         case "$action" in
             FOUND)
@@ -237,7 +219,6 @@ cleanup_hardlinks() {
 
     rm "$temp_results"
 
-    # Summary
     local freed_mb=$((total_freed / 1024 / 1024))
     log "----------------------------------------"
     log "Cleanup complete!"
@@ -246,7 +227,6 @@ cleanup_hardlinks() {
     log "Space freed: ${freed_mb} MB"
 }
 
-# Run cleanup
 rotate_logs
 log "========================================"
 log "Starting hardlink cleanup"

@@ -1,14 +1,16 @@
-# Managed by Ansible (roles/containers/tasks/ai.yml) -- do not edit on the host.
+# Managed by Ansible (roles/containers/tasks/ai.yml). Do not edit on the host.
 #
-# Self-hosted AI stack. Inference is served by the local `ollama` container
-# (GPU), reachable only in-network at http://ollama:11434 -- it is deliberately
-# NOT exposed through Traefik. Two frontends sit in front of it, each exposed via
-# Traefik with its own auth:
-#   - odysseus: AI workspace (https://github.com/pewdiepie-archdaemon/odysseus),
-#       guarded by its own built-in account auth. CPU-only; talks to ollama.
-#   - litellm:  OpenAI-compatible gateway. Auth via its own master key + virtual
-#       keys (backed by the litellm-db Postgres), so you can mint/revoke a key
-#       per person for tools like opencode. Reachable at https://litellm.<dns>.
+# Self-hosted AI stack. The local `ollama` container runs the inference on the
+# GPU. Only the internal network reaches it, at http://ollama:11434. Traefik
+# does NOT expose it. Two frontends call it, and Traefik exposes both. Each
+# frontend has its own auth.
+#   - odysseus: an AI workspace
+#       (https://github.com/pewdiepie-archdaemon/odysseus). Its own built-in
+#       account auth guards it. It runs on the CPU and calls ollama.
+#   - litellm: an OpenAI-compatible gateway at https://litellm.<dns>. Its master
+#       key and its virtual keys control access. The litellm-db Postgres stores
+#       the virtual keys, so each person can get a separate key for a tool such
+#       as opencode, and you can revoke one key alone.
 services:
   ollama:
     image: ollama/ollama:latest
@@ -40,8 +42,9 @@ services:
     volumes:
       - "./litellm/config.yaml:/app/config.yaml:ro"
     environment:
-      # Admin key (must start with sk-): logs into the UI at /ui and mints/revokes
-      # virtual keys via the API. Virtual keys + spend tracking need the DB below.
+      # Admin key. It must start with sk-. It logs in to the UI at /ui and
+      # creates or revokes virtual keys through the API. The virtual keys and
+      # the spend records need the database below.
       - LITELLM_MASTER_KEY={{ litellm_master_key }}
       - DATABASE_URL=postgresql://litellm:{{ litellm_db_password }}@litellm-db:5432/litellm
       - STORE_MODEL_IN_DB=True
@@ -95,25 +98,26 @@ services:
       - "./data/huggingface:/app/.cache/huggingface:z"
       - "./data/local:/app/.local:z"
     environment:
-      # --- Inference (local ollama) ---
+      # Inference (local ollama)
       - LLM_HOST=ollama
       - OLLAMA_BASE_URL=http://ollama:11434/v1
-      # --- Bundled services (in-network) ---
+      # Bundled services (in-network)
       - SEARXNG_INSTANCE=http://searxng:8080
       - CHROMADB_HOST=chromadb
       - CHROMADB_PORT=8000
-      # --- Embeddings: CPU fastembed fallback (downloads ~50MB on first run).
-      #     To offload onto ollama instead, pull an embed model there and set
-      #     EMBEDDING_URL=http://ollama:11434/v1/embeddings + EMBEDDING_MODEL. ---
+      # Embeddings. fastembed runs them on the CPU and downloads about 50MB on
+      # the first run. To move them onto ollama, pull an embed model there, then
+      # set EMBEDDING_URL=http://ollama:11434/v1/embeddings and EMBEDDING_MODEL.
       - FASTEMBED_MODEL=sentence-transformers/all-MiniLM-L6-v2
-      # --- Auth / behind-Traefik-HTTPS hardening ---
+      # Auth, and the settings that suit HTTPS behind Traefik
       - AUTH_ENABLED=true
       - LOCALHOST_BYPASS=false
       - SECURE_COOKIES=true
       - ALLOWED_ORIGINS=https://odysseus.{{ dns_name }}
       - ODYSSEUS_ADMIN_USER=admin
-      # Optional: pre-seed the admin password from vault. If unset, Odysseus
-      # prints a generated temp password to the container logs on first boot.
+      # Optional admin password from the vault. If it is empty, Odysseus
+      # generates a temporary password and prints it to the container logs on
+      # the first boot.
       - ODYSSEUS_ADMIN_PASSWORD={{ odysseus_admin_password | default('') }}
       - DATABASE_URL=sqlite:///./data/app.db
       - PUID={{ uid }}
@@ -144,9 +148,10 @@ services:
       - ANONYMIZED_TELEMETRY=FALSE
 
   searxng:
-    # Pinned (not :latest) -- odysseus gates on searxng's healthcheck, and a
-    # broken upstream tag would block the whole app from starting. Bump only
-    # after verifying a newer tag boots clean (see upstream compose comments).
+    # A pinned tag, not :latest. odysseus waits on the searxng healthcheck, so
+    # a broken upstream tag stops the whole app from starting. Before you change
+    # this tag, confirm that the newer one starts without an error. See the
+    # upstream compose comments.
     image: docker.io/searxng/searxng:2026.5.31-7159b8aed
     container_name: odysseus-searxng
     restart: unless-stopped

@@ -1,25 +1,25 @@
-# Managed by Ansible (roles/containers/tasks/immich.yml) -- do not edit on the host.
+# Managed by Ansible (roles/containers/tasks/immich.yml). Do not edit on the
+# host.
 #
-# Standard Immich stack (server + ML + redis + postgres). Immich fully owns
-# and reorganizes whatever lives under UPLOAD_LOCATION, so it's pointed at
-# /bigboi/media/immich-library on the big/bulk storage pool -- not
-# fastboi/docker, which is small fast storage meant for app configs, and not
-# the existing /bigboi/media/photos|videos trees, which keep their own
-# hand-organized layout untouched. Model cache and the Postgres data dir stay
-# under docker_dir since they're small and benefit from the faster disk.
+# The standard Immich stack: server, ML, redis, and postgres. Immich owns and
+# reorganizes everything under UPLOAD_LOCATION, so UPLOAD_LOCATION points at
+# /bigboi/media/immich-library on the bulk storage pool. It does not point at
+# fastboi/docker, which is small fast storage for app configs. It also does not
+# point at the /bigboi/media/photos and /bigboi/media/videos trees, which keep
+# their own layout. The model cache and the Postgres data dir stay under
+# docker_dir, because they are small and the faster disk helps them.
 #
-# To bring the existing /bigboi/media/photos and /videos libraries in,
-# migrate them with immich-go (https://github.com/simulot/immich-go) run
-# ad hoc against those source trees, targeting this server's API/key -- it
-# uploads into the managed library above, preserving EXIF dates and turning
-# folders into albums. That's a one-time migration job, not a persistent
-# service, so it's not wired into this compose file.
+# To bring the /bigboi/media/photos and /bigboi/media/videos libraries in, run
+# immich-go (https://github.com/simulot/immich-go) by hand against those source
+# trees with this server's API key. It uploads into the managed library above,
+# keeps the EXIF dates, and turns each folder into an album. That is a one-time
+# job, not a service, so this compose file does not run it.
 #
-# immich-machine-learning shares GPU1 (the Tesla V100, board name
-# "PG500-216" in nvidia-smi) with ollama for CLIP/face-recognition inference
-# -- same device UUID ai-compose.yml pins ollama to. immich-server stays
-# CPU-only for now; add the same device reservation there too if you want
-# NVENC-accelerated transcoding later.
+# immich-machine-learning shares GPU1 with ollama for CLIP inference and face
+# recognition. GPU1 is the Tesla V100, board name "PG500-216" in nvidia-smi,
+# and ai-compose.yml pins ollama to the same device UUID. immich-server runs on
+# the CPU. To get NVENC transcoding later, add the same device reservation to
+# immich-server.
 services:
   immich-server:
     image: ghcr.io/immich-app/immich-server:{{ immich_version }}

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Managed by Ansible — local edits will be overwritten.
+# Managed by Ansible. Local edits will be overwritten.
 
 import glob
 import os
@@ -32,7 +32,7 @@ def find_hwmon(chip: str) -> str:
                     return path
         except OSError:
             continue
-    raise RuntimeError(f'hwmon device {chip!r} not found — is nct6687 loaded?')
+    raise RuntimeError(f'hwmon device {chip!r} not found. Is nct6687 loaded?')
 
 
 def interpolate(temp: int, curve: list) -> int:

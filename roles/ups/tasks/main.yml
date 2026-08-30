@@ -15,7 +15,7 @@
         masked: true
 
     - name: Mark stock /etc/default/apcupsd as not configured
-      # Keeps the masked stock unit from doing anything if it ever gets unmasked.
+      # Stops the stock unit from starting if someone unmasks it later.
       replace:
         path: /etc/default/apcupsd
         regexp: "^ISCONFIGURED=yes$"

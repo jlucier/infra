@@ -1,16 +1,16 @@
-# Managed by Ansible -- roles/pihole_records
-# Split-horizon DNS for the home LAN. Applied identically to every Pi-hole
-# instance; if these drift, clients get different answers depending on which
-# resolver they happen to hit. Changes here need an FTL restart, not a
-# reloaddns -- see the role's handler.
+# Managed by Ansible, roles/pihole_records.
+# Split-horizon DNS for the home LAN. Every Pi-hole instance gets the same
+# records. If the records differ, a client gets a different answer from each
+# resolver. A change here needs an FTL restart, not a reloaddns. See the
+# handler in the role.
 
-# All Traefik-fronted services live under *.{{ dns_name }} and resolve to
-# homeboi. Keep this wildcard scoped to that label: widening it to the apex
-# also captures {{ vpn_dns_name }} itself, which breaks the VPN (see below).
+# Every service behind Traefik is under *.{{ dns_name }} and resolves to homeboi.
+# Keep this wildcard on that label. A wildcard on the apex also matches
+# {{ vpn_dns_name }} itself and breaks the VPN. See below.
 address=/{{ dns_name }}/{{ homeboi_ip }}
 
-# The apex is the WireGuard endpoint hostname. Publicly it resolves to the WAN
-# address; on the LAN we point it straight at the gateway so the tunnel comes
-# up without relying on NAT hairpin. An exact host-record is required here --
-# an address=/.../ wildcard on the apex would swallow every subdomain above.
+# The apex is the WireGuard endpoint hostname. On the internet it resolves to
+# the WAN address. On the LAN it points at the gateway, so the tunnel comes up
+# without NAT hairpin. This record must be an exact host-record. An
+# address=/.../ wildcard on the apex would swallow every subdomain above.
 host-record={{ vpn_dns_name }},{{ gateway_ip }}

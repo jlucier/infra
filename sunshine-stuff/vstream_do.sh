@@ -5,10 +5,10 @@ STATE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/sunshine-stream"
 STATE_FILE="$STATE_DIR/wayland_state.env"
 mkdir -p "$STATE_DIR"
 
-# Strip ANSI color codes from kscreen-doctor output
+# Remove the ANSI color codes from the kscreen-doctor output.
 KS_OUTPUT="$(kscreen-doctor -o 2>&1 | sed 's/\x1b\[[0-9;]*m//g')"
 
-# Map numeric rotation values to kscreen-doctor command names
+# Convert a numeric rotation value to a kscreen-doctor name.
 rotation_num_to_name() {
   case "$1" in
     1) echo "none" ;;
@@ -19,8 +19,8 @@ rotation_num_to_name() {
   esac
 }
 
-# Parse all settings for a given output
-# Sets: ${prefix}_ROT, ${prefix}_POS, ${prefix}_MODE, ${prefix}_SCALE
+# Read every setting of one output. The function sets ${prefix}_ROT,
+# ${prefix}_POS, ${prefix}_MODE, and ${prefix}_SCALE.
 parse_output_settings() {
   local output_name="$1"
   local prefix="$2"
@@ -40,7 +40,7 @@ parse_output_settings() {
       elif [[ "$line" =~ Scale:\ *([0-9.]+) ]]; then
         scale="${BASH_REMATCH[1]}"
       elif [[ "$line" =~ Modes:.*\ ([0-9]+):[0-9]+x[0-9]+@[0-9.]+\*! ]]; then
-        # Capture mode index number (e.g., "1" from "1:3440x1440@59.97*!")
+        # Take the mode index, such as "1" from "1:3440x1440@59.97*!".
         mode="${BASH_REMATCH[1]}"
       fi
     fi
@@ -52,7 +52,7 @@ parse_output_settings() {
   printf -v "${prefix}_SCALE" '%s' "$scale"
 }
 
-# Find the current primary output (priority 1)
+# Find the current primary output, which has priority 1.
 PRIMARY_OUT=""
 current_output=""
 while IFS= read -r line; do
@@ -68,12 +68,12 @@ if [[ -z "$PRIMARY_OUT" ]]; then
   PRIMARY_OUT="$(echo "$KS_OUTPUT" | awk '/^Output:/{print $3; exit}')"
 fi
 
-# Target is DP-2 (the 16:9 monitor you want to use for streaming)
+# DP-2 is the 16:9 monitor that the stream uses.
 TARGET_OUT="DP-2"
-# Other output to disable during streaming
+# The script disables DP-1 while the stream runs.
 OTHER_OUT="DP-1"
 
-# Capture full settings for both monitors
+# Read every setting of both monitors.
 parse_output_settings "$TARGET_OUT" "TARGET"
 parse_output_settings "$OTHER_OUT" "OTHER"
 
@@ -83,7 +83,7 @@ echo "  Target: $TARGET_OUT (rot: $TARGET_ROT, pos: $TARGET_POS, mode: $TARGET_M
 echo "  Other: $OTHER_OUT (rot: $OTHER_ROT, pos: $OTHER_POS, mode: $OTHER_MODE, scale: $OTHER_SCALE)"
 echo "  Will disable: $OTHER_OUT"
 
-# Save state for undo
+# Save the state so vstream_undo.sh can restore it.
 cat > "$STATE_FILE" <<EOF
 PRIMARY_OUT=$PRIMARY_OUT
 TARGET_OUT=$TARGET_OUT
@@ -98,7 +98,8 @@ OTHER_MODE=$OTHER_MODE
 OTHER_SCALE=$OTHER_SCALE
 EOF
 
-# Rotate target monitor to landscape, make it primary, and disable other output
+# Rotate the target monitor to landscape, make it primary, then disable the
+# other output.
 echo "Setting $TARGET_OUT to landscape and primary, disabling $OTHER_OUT..."
 kscreen-doctor "output.$TARGET_OUT.rotation.none" "output.$TARGET_OUT.primary" "output.$OTHER_OUT.disable"
 

@@ -1,10 +1,7 @@
 ---
-# borgmatic. Replaced the hand-rolled files/backup.py on 2026-08-30.
-# See ~/notes/personal/projects/borgmatic-port.md.
-#
-# Replaced backup.py outright rather than running in parallel: borgbase already
-# alerts if too many days pass without a backup, which is the safety net the
-# parallel run would have provided.
+# Nightly borg backups, driven by borgmatic. One config file per dataset, in
+# borgmatic_config_dir. borgbase alerts when too many days pass without a
+# backup.
 
 borgmatic_version: "2.1.7"
 borgmatic_venv: /opt/borgmatic
@@ -12,51 +9,35 @@ borgmatic_bin: /usr/local/bin/borgmatic
 borgmatic_config_dir: /etc/borgmatic.d
 
 borgmatic_timer_enabled: true
-# Midnight, matching the @daily cron this replaced.
 borgmatic_schedule: "*-*-* 00:00:00"
 
-# backup.py ran as jordan and so picked up jordan's SSH key implicitly.
-# borgmatic runs as root, which has no private key of its own, so both borgbase
-# and lilboi have to be pointed at jordan's key explicitly.
-# Dedicated, root-owned key used only by borgmatic. borgmatic runs as root, and
-# a root service should not depend on a file in a user's home: if jordan's key
-# rotates or /home moves, backups would break silently at midnight. A separate
-# key also keeps the backup credential distinct from the interactive one, and is
-# restricted to "borg serve" on lilboi (see authorized_keys there).
+# A root-owned key that only borgmatic uses.
 borgmatic_ssh_key: /root/.ssh/borgmatic_ed25519
 
-# IdentitiesOnly stops ssh offering anything but this key, so a failure here is
-# an honest failure rather than a silent fallback to whatever else is around.
+# IdentitiesOnly stops ssh from offering any other key, so an auth failure here
+# is a real failure and not a fallback to a key in the agent.
 borgmatic_ssh_command: "ssh -i {{ borgmatic_ssh_key }} -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
 
-# The passphrase backup.py generated. Reusing it is what lets borgmatic open the
-# existing repos instead of needing new ones. 32 bytes, no trailing newline.
+# The passphrase for every repo. 32 bytes, no trailing newline. The password
+# manager holds the copy to restore from.
 #
-# NOTE: not inside any backed-up dataset -- it lives on homeboi's root disk only.
-# The passphrase is kept in a password manager; that is the copy that matters.
-#
-# There is deliberately no keyfile-export hook. With repokey the key already
-# lives in the repo, the exported blob never changes, and re-exporting it nightly
-# only adds a step that can fail the whole run. Export once by hand if the
-# existing copies in ~/.borg_keys ever need refreshing:
+# The repos use repokey, so each repo holds its own key. To refresh the exported
+# copies in ~/.borg_keys, export by hand:
 #   BORG_RSH="ssh -i ~/.ssh/id_rsa" BORG_PASSPHRASE=$(cat ~/.borg_pass) \
 #       borg key export <repo> <dest>
 borgmatic_passphrase_file: "/home/{{ username }}/.borg_pass"
 borgmatic_log_file: "/home/{{ username }}/backups/borgmatic.log"
 
-# Deliberately not "auto-", which is backup.py's prefix. borgmatic derives
-# match_archives from archive_name_format, so prune and check only ever consider
-# borgmatic's own archives. Verified on the box: an auto-2020-01-01 archive
-# survived a borgmatic prune with keep_monthly=6.
+# borgmatic derives match_archives from archive_name_format, so prune and check
+# read only the archives with this prefix. The older auto-* archives in these
+# repos stay untouched.
 borgmatic_archive_prefix: borgmatic
 
-# Unchanged from config.toml.
 borgmatic_keep_daily: 7
 borgmatic_keep_weekly: 4
 borgmatic_keep_monthly: 6
 
-# backup.py had no retry at all. borgbase is the repo most likely to be briefly
-# unreachable.
+# borgbase is the repo most likely to be unreachable for a short time.
 borgmatic_retries: 3
 borgmatic_retry_wait: 60
 
@@ -75,8 +56,8 @@ borgmatic_datasets:
     source: "{{ docker_dir }}"
     exclude:
       - "{{ docker_dir }}/wireguard"
-      # Excluded as a directory but captured properly below: grafana.db is
-      # SQLite with a live journal, so a snapshot of it may not reopen.
+      # Excluded here, but the sqlite_databases hook below captures it.
+      # grafana.db is SQLite with a live journal, so a file copy may not reopen.
       - "{{ docker_dir }}/analytics/grafana"
     repositories:
       - label: borgbase
@@ -84,8 +65,8 @@ borgmatic_datasets:
       - label: lilboi
         path: "{{ homeboi_docker_lilboi_repo }}"
     postgresql_databases:
-      # The database backup.py silently skipped for 549 log lines: the data
-      # directory is 0700 owned by uid 70.
+      # The data directory is 0700 and uid 70 owns it, so a file copy cannot
+      # read it. This hook dumps the database instead.
       - name: litellm
         username: litellm
         container: litellm-db

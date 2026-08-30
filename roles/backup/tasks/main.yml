@@ -1,6 +1,6 @@
 ---
-# Backups are borgmatic (tasks/borgmatic.yml). borg itself is still installed
-# here because borgmatic drives it -- see local_path in the config template.
+# borgmatic does the backups (tasks/borgmatic.yml). This file installs borg,
+# because borgmatic calls it. See local_path in the config template.
 
 - name: Install borg
   tags:

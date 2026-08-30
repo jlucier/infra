@@ -50,8 +50,8 @@
 
     - role: roles/containers
 
-    # Must follow roles/containers: the reload handler shells into the running
-    # pihole container.
+    # This role must run after roles/containers, because the reload handler
+    # runs a command inside the pihole container.
     - role: roles/pihole_records
       vars:
         pihole_dnsmasq_dir: "{{ docker_dir }}/pihole/etc-dnsmasq.d"

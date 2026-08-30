@@ -1,10 +1,9 @@
 ---
-# borgmatic runs as root, which is the whole point: the databases and data
-# directories under {{ docker_dir }} are 0700 owned by container uids, and that
-# is exactly what backup.py could not read as jordan.
+# borgmatic runs as root. The data directories under {{ docker_dir }} are 0700 and
+# container uids own them, so no other user can read them.
 #
-# Ubuntu 22.04 ships borgmatic 1.5.20 (1.7.9 in backports). The ZFS hook landed
-# in 1.9.3, so apt is not an option -- hence the pinned venv.
+# The ZFS hook needs borgmatic 1.9.3. Ubuntu 22.04 ships 1.5.20, and backports
+# ships 1.7.9, so this role installs a pinned venv instead of the apt package.
 
 - name: Install borgmatic
   tags:
@@ -15,8 +14,8 @@
       apt:
         name:
           - python3.11-venv
-          # The sqlite database hook shells out to sqlite3; it is not on the
-          # host by default.
+          # The sqlite database hook calls sqlite3, which the host does not
+          # install by default.
           - sqlite3
         state: present
 
@@ -36,8 +35,8 @@
   tags:
     - backups
     - borgmatic
-  # Public half must be registered by hand on borgbase; on lilboi it is
-  # restricted to "borg serve" via a forced command in authorized_keys.
+  # Register the public half by hand on borgbase. On lilboi, a forced command in
+  # authorized_keys restricts it to "borg serve".
   openssh_keypair:
     path: "{{ borgmatic_ssh_key }}"
     type: ed25519
@@ -52,8 +51,8 @@
     - backups
     - borgmatic
   block:
-    # 0700/0600 throughout: these files carry the repo URLs, which are vault
-    # values, and borgbase ones are user@host:repo strings.
+    # 0700 and 0600 throughout. These files hold the repo URLs, which are vault
+    # values. The borgbase URLs are user@host:repo strings.
     - name: Config directory
       file:
         path: "{{ borgmatic_config_dir }}"
@@ -109,8 +108,8 @@
         group: root
         mode: "0644"
 
-    # Off until borgmatic_timer_enabled is set, so installing this role does not
-    # start a second backup system on its own.
+    # The timer stays off until borgmatic_timer_enabled is true, so this role
+    # does not start a second backup system by itself.
     - name: Timer state
       systemd:
         name: borgmatic.timer

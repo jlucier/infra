@@ -1,13 +1,13 @@
 ---
-# Split-horizon DNS facts shared by every Pi-hole instance. Loaded by
-# homeboi.yml and failhole.yml -- deliberately NOT by vpn.yml, which sets
-# godaddy_hostname per-host in the inventory.
+# Split-horizon DNS facts that every Pi-hole instance shares. homeboi.yml and
+# failhole.yml load this file. vpn.yml does not, because it sets
+# godaddy_hostname per host in the inventory.
 godaddy_hostname: jordan
 
 # Every Traefik-fronted service lives under this domain and resolves to homeboi.
 dns_name: "homeboi.{{ godaddy_hostname }}.{{ godaddy_domain }}"
 
-# Apex of the zone, and also the WireGuard endpoint hostname (vpn_host in
-# vars/vpn.yml). On the LAN it must resolve to the gateway rather than homeboi.
+# The apex of the zone, and also the WireGuard endpoint hostname (vpn_host in
+# vars/vpn.yml). On the LAN it must resolve to the gateway, not to homeboi.
 vpn_dns_name: "{{ godaddy_hostname }}.{{ godaddy_domain }}"
 gateway_ip: 192.168.13.1

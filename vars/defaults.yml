@@ -22,6 +22,6 @@ grafana_http: 3000
 syncthing_http: 8384
 immich_http: 2283
 
-# "release" tracks Immich's stable channel; pin to a version tag if you want
-# to control upgrades manually.
+# "release" follows the Immich stable channel. To control the upgrades by hand,
+# set a version tag here instead.
 immich_version: release

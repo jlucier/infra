@@ -1,13 +1,13 @@
 # Fan control: GPU-temp-driven PWM for the pump header (W_PUMP+ / NCT6687 pwm2).
 #
-# pwm_channel: observed fan2 spinning at 2547 RPM at 39% PWM (99/255) at idle —
-# high RPM relative to PWM is a pump signature. Verify by watching
-# /sys/class/hwmon/hwmon*/fan*_input while tweaking the value manually.
+# pwm_channel: fan2 spins at 2547 RPM at 39% PWM (99/255) at idle. A high RPM
+# for a low PWM is a pump signature. To confirm the channel, change the value by
+# hand and watch /sys/class/hwmon/hwmon*/fan*_input.
 #
 # gpu_index: 0 = GTX 1650 (the ollama GPU); 1 = Tesla PG500 (no fan).
 #
-# Curve breakpoints [gpu_temp_°C, pwm_0-255]. Linearly interpolated.
-# 100/255 ≈ 39% — treat as pump minimum to avoid bearing wear.
+# Curve breakpoints [gpu_temp_deg_C, pwm_0-255]. The daemon interpolates between
+# the points. 100/255 is 39%. Do not go below it, or the pump bearing wears.
 gpu_fan_pwm_channel: 2
 gpu_fan_gpu_index: 1
 gpu_fan_poll_interval: 5
@@ -19,21 +19,21 @@ gpu_fan_curve:
   - [80, 255]
 
 # The NVIDIA driver stays on the 580.xx branch. The 595 branch moved Volta to
-# legacy and refuses to claim the V100, leaving only the GTX 1650 usable
-# ("NVRM: ignoring the legacy GPU 0000:2b:00.0" at boot). 580.173.02 is the
-# newest branch that drives both cards, and Volta is not coming back.
+# legacy and refuses to claim the V100. Only the GTX 1650 stays usable, and the
+# boot log shows "NVRM: ignoring the legacy GPU 0000:2b:00.0". 580.173.02 is the
+# newest branch that drives both cards, and Volta will not come back.
 #
-# The driver is installed by hand, not by Ansible -- the docker role manages
-# only nvidia-docker2. The 580 packages are pinned with apt-mark hold, so
+# Someone must install the driver by hand. Ansible does not. The docker role
+# manages only nvidia-docker2. The 580 packages are pinned with apt-mark hold, so
 # installing a newer branch fails on the held packages instead of silently
 # dropping the V100. Taking a 580.x point release needs an explicit unhold,
 # upgrade, and re-hold.
 #
-# GPU1: Tesla V100 (board name "PG500-216" in nvidia-smi). Shared by ollama
-# (ai-compose.yml) and immich-machine-learning (immich-compose.yml) via
-# explicit device UUID rather than index, since compose's device_ids is
-# more robust to enumeration order changes than a bare index would be.
-# Get with: nvidia-smi --query-gpu=index,uuid,name --format=csv
+# GPU1: Tesla V100 (board name "PG500-216" in nvidia-smi). ollama
+# (ai-compose.yml) and immich-machine-learning (immich-compose.yml) both use it.
+# Both name it by device UUID, not by index, because the enumeration order can
+# change. Get the UUID with:
+#   nvidia-smi --query-gpu=index,uuid,name --format=csv
 gpu_v100_uuid: GPU-8b7684fd-7ddc-5abd-badd-bded4dfe50f0
 
 username: jordan
@@ -49,14 +49,14 @@ ytdlp_sync_subdir: dev/ytdlp
 ytdlp_download_dir: /bigboi/media/youtube
 ytdlp_sleep: 3600
 
-# APC UPS plugged into the host via USB. The "server" UPS powers homeboi
-# itself and triggers graceful shutdown on low battery.
-# (The "network" UPS below is no longer physically connected.)
+# APC UPSes connected to the host over USB. The "server" UPS powers homeboi and
+# shuts it down when the battery gets low.
 #
-# usb_id_product is the lsusb idProduct hex (vendor 051d = APC). Get it with:
+# usb_id_product is the lsusb idProduct hex. Vendor 051d is APC. Get it with:
 #   lsusb -d 051d:
-# If both UPSes turn out to share the same idProduct, also set usb_serial
-# (from `lsusb -v -d 051d:<id> | grep iSerial`) to disambiguate.
+# If two UPSes share one idProduct, also set usb_serial to tell them apart. Get
+# the serial with:
+#   lsusb -v -d 051d:<id> | grep iSerial
 upses:
   - name: server
     upsname: BR1500S
@@ -67,7 +67,7 @@ upses:
     battery_level: 15  # shutdown when battery % drops below this
     minutes: 5         # shutdown when estimated runtime (min) drops below this
     timeout: 0         # 0 = never shutdown solely on time-on-battery
-  # "network" UPS is no longer hooked up
+  # The "network" UPS is no longer connected.
   # - name: network
   #   upsname: BE600M1
   #   usb_serial: 4B2301P07253

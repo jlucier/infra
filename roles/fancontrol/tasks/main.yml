@@ -1,10 +1,12 @@
 ---
-# Fan control: reads GPU temp via nvidia-smi, writes PWM to the pump header
-# on the NCT6687 superio chip (MSI PRO B550-VC / MS-7C56).
+# Fan control. It reads the GPU temperature with nvidia-smi, then writes a PWM
+# value to the pump header on the NCT6687 superio chip (MSI PRO B550-VC /
+# MS-7C56).
 #
-# The stock nct6683 kernel driver exposes the NCT6687 read-only; this role
-# builds and installs the out-of-tree nct6687d driver (Fred78290/nct6687d)
-# which adds write support, then deploys a Python daemon and systemd service.
+# The stock nct6683 kernel driver gives read-only access to the NCT6687. This
+# role builds and installs the out-of-tree nct6687d driver
+# (Fred78290/nct6687d), which adds write access. The role then installs a
+# Python daemon and a systemd service.
 
 - name: Install nct6687d DKMS driver
   tags: fancontrol

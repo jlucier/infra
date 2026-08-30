@@ -7,7 +7,6 @@
     - litellm
     - llm
   block:
-    # --- AI stack ---
     - name: Create and chmod ai folders
       become: true
       file:
@@ -26,11 +25,11 @@
         - "{{ docker_dir }}/ai/ntfy"
         - "{{ docker_dir }}/ai/litellm"
 
-    # Not in the loop above: that one recurses and would repeatedly clobber
-    # ownership/perms on every file Postgres manages inside its own data dir.
-    # Only the top-level directory needs to exist with the right owner before
-    # first init -- owner/group here must match the `user:` pinned on the
-    # litellm-db service in ai-compose.yml.
+    # This directory is not in the loop above, because that loop recurses. It
+    # would reset the owner and the mode of every file Postgres keeps in its
+    # own data dir. Only the top directory must exist with the right owner
+    # before the first init. The owner and group here must match the `user:`
+    # pinned on the litellm-db service in ai-compose.yml.
     - name: Create litellm-db data dir
       become: true
       file:

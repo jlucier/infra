@@ -3,7 +3,7 @@ Description=Run borgmatic daily
 
 [Timer]
 OnCalendar={{ borgmatic_schedule }}
-# Catch up after downtime rather than silently skipping a day.
+# Run a missed backup after downtime instead of skipping the day.
 Persistent=true
 RandomizedDelaySec=15m
 
