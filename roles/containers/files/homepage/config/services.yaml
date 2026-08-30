@@ -77,6 +77,11 @@
         href: "https://router.lan"
         siteMonitor: "https://router.lan"
         icon: unifi-controller.png
+        widget:
+          type: unifi
+          url: https://router.lan
+          key: "{{ unifi_api_key }}"
+
     - "Pi-hole (main)":
         href: "https://pihole.{{ dns_name }}/admin/"
         siteMonitor: "http://pihole"
