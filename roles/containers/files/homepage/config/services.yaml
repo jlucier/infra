@@ -42,6 +42,13 @@
         href: "https://grafana.{{ dns_name }}"
         siteMonitor: "http://grafana:{{ grafana_http }}"
         icon: grafana.svg
+        widget:
+          type: grafana
+          version: 2 # optional, default is 1
+          #alerts: alertmanager # optional, default is grafana
+          url: "http://grafana:{{ grafana_http }}"
+          username: "{{ grafana_username }}"
+          password: "{{ grafana_password }}"
     - Traefik:
         href: "https://traefik.{{ dns_name }}"
         icon: traefik.svg
