@@ -1,0 +1,14 @@
+[Unit]
+Description=borgmatic backup
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+# Backups are never urgent enough to compete with anything the box is serving.
+Nice=19
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+# Non-zero exit here is a real failure signal: cron mail and, once the ntfy hook
+# lands, the phone.
+ExecStart={{ borgmatic_bin }} --verbosity -1 --syslog-verbosity 1

@@ -1,4 +1,7 @@
 ---
+# Backups are borgmatic (tasks/borgmatic.yml). borg itself is still installed
+# here because borgmatic drives it -- see local_path in the config template.
+
 - name: Install borg
   tags:
     - backups
@@ -16,29 +19,5 @@
     name: python3.11
     state: present
 
-- name: Install backup script
-  tags:
-    - backups
-  block:
-    - name: Copy config
-      template:
-        src: files/config.toml
-        dest: "/home/{{ username }}/backups/"
-        owner: "{{ username }}"
-        group: "{{ username }}"
-
-    - name: Script
-      copy:
-        src: files/backup.py
-        dest: "/home/{{ username }}/backups/backup.py"
-        mode: "775"
-        owner: "{{ username }}"
-        group: "{{ username }}"
-
-    - name: Install cron
-      cron:
-        name: "Automated backups"
-        job: "/home/{{ username }}/backups/backup.py"
-        special_time: daily
-        state: present
-        user: "{{ username }}"
+- name: Backups
+  import_tasks: borgmatic.yml

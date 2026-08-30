@@ -1,0 +1,103 @@
+# {{ item.name }} -- managed by ansible (roles/backup). Do not edit on the host.
+
+source_directories:
+    - {{ item.source }}
+
+repositories:
+{% for repo in item.repositories %}
+    - path: "{{ repo.path }}"
+      label: {{ repo.label }}
+      encryption: repokey-blake2
+{% endfor %}
+
+encryption_passphrase: "{credential file {{ borgmatic_passphrase_file }}}"
+
+local_path: /usr/local/bin/borg
+ssh_command: "{{ borgmatic_ssh_command }}"
+
+# borgmatic derives match_archives from this, which scopes prune and check to
+# borgmatic's own archives and leaves backup.py's auto-* ones alone.
+archive_name_format: "{{ borgmatic_archive_prefix }}-{now:%Y-%m-%dT%H:%M:%S}"
+
+compression: zstd
+exclude_caches: true
+{% if item.exclude is defined %}
+
+exclude_patterns:
+{% for pattern in item.exclude %}
+    - {{ pattern }}
+{% endfor %}
+{% endif %}
+
+keep_daily: {{ borgmatic_keep_daily }}
+keep_weekly: {{ borgmatic_keep_weekly }}
+keep_monthly: {{ borgmatic_keep_monthly }}
+
+retries: {{ borgmatic_retries }}
+retry_wait: {{ borgmatic_retry_wait }}
+
+# Snapshot the dataset so the archive is one point in time. borgmatic finds the
+# dataset from source_directories, mounts the snapshot, backs it up, and
+# destroys it -- including when the backup itself fails.
+zfs: {}
+
+# backup.py never verified that anything in these repos was still readable.
+checks:
+    - name: repository
+      frequency: 2 weeks
+    - name: archives
+      frequency: 1 month
+
+log_file: {{ borgmatic_log_file }}
+{% if item.postgresql_databases is defined %}
+
+# Dump rather than copying the live data directory. A ZFS snapshot of a running
+# Postgres is crash-consistent, not application-consistent. Dumps stream
+# straight into borg, so there is no staging file and no permission problem.
+#
+# pg_dump runs inside the container: the host has no postgres client, and the
+# client version is guaranteed to match the server this way. borgmatic's native
+# `container:` option does not do this -- it only resolves the container's IP
+# and still shells out to a host pg_dump. No password is needed because the
+# postgres image trusts local socket connections.
+postgresql_databases:
+{% for db in item.postgresql_databases %}
+    - name: {{ db.name }}
+      username: {{ db.username }}
+      format: custom
+      pg_dump_command: docker exec -i {{ db.container }} pg_dump
+      pg_restore_command: docker exec -i {{ db.container }} pg_restore
+      psql_command: docker exec -i {{ db.container }} psql
+{% endfor %}
+{% endif %}
+{% if item.sqlite_databases is defined %}
+
+sqlite_databases:
+{% for db in item.sqlite_databases %}
+    - name: {{ db.name }}
+      path: {{ db.path }}
+{% endfor %}
+{% endif %}
+
+{% if item.postgresql_databases is defined or item.sqlite_databases is defined %}
+
+commands:
+    # The database hooks implicitly turn on borg's --read-special, which makes
+    # borg read fifos and sockets rather than recording them. It then blocks
+    # forever on the first one: no output, no error, no timeout, and the ZFS
+    # snapshot is left mounted. There are none under {{ item.source }} today, but a
+    # container could create one any night, so fail loudly instead of hanging.
+    #
+    # Keep hooks out of this config unless they earn their place: a failing hook
+    # makes borgmatic retry the whole backup, so a trivial bug costs three runs.
+    - before: action
+      when:
+          - create
+      run:
+          - |-
+            special=$(find {{ item.source }} -xdev \( -type s -o -type p \) -print -quit)
+            if [ -n "$special" ]; then
+                echo "borgmatic: $special would hang borg --read-special; exclude it or drop the database hooks" >&2
+                exit 1
+            fi
+{% endif %}

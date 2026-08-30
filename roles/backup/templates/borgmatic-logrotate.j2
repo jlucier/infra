@@ -1,0 +1,11 @@
+# backup.py used a RotatingFileHandler; borgmatic's log_file has no rotation of
+# its own, so without this it grows without bound.
+{{ borgmatic_log_file }} {
+    weekly
+    rotate 4
+    compress
+    delaycompress
+    missingok
+    notifempty
+    copytruncate
+}

@@ -1,0 +1,119 @@
+---
+# borgmatic runs as root, which is the whole point: the databases and data
+# directories under {{ docker_dir }} are 0700 owned by container uids, and that
+# is exactly what backup.py could not read as jordan.
+#
+# Ubuntu 22.04 ships borgmatic 1.5.20 (1.7.9 in backports). The ZFS hook landed
+# in 1.9.3, so apt is not an option -- hence the pinned venv.
+
+- name: Install borgmatic
+  tags:
+    - backups
+    - borgmatic
+  block:
+    - name: Venv and sqlite dependencies
+      apt:
+        name:
+          - python3.11-venv
+          # The sqlite database hook shells out to sqlite3; it is not on the
+          # host by default.
+          - sqlite3
+        state: present
+
+    - name: Borgmatic venv
+      pip:
+        name: "borgmatic=={{ borgmatic_version }}"
+        virtualenv: "{{ borgmatic_venv }}"
+        virtualenv_command: /usr/bin/python3.11 -m venv
+
+    - name: Link borgmatic onto PATH
+      file:
+        src: "{{ borgmatic_venv }}/bin/borgmatic"
+        dest: "{{ borgmatic_bin }}"
+        state: link
+
+- name: Borgmatic SSH key
+  tags:
+    - backups
+    - borgmatic
+  # Public half must be registered by hand on borgbase; on lilboi it is
+  # restricted to "borg serve" via a forced command in authorized_keys.
+  openssh_keypair:
+    path: "{{ borgmatic_ssh_key }}"
+    type: ed25519
+    comment: "borgmatic@{{ inventory_hostname }}"
+    owner: root
+    group: root
+    mode: "0600"
+    regenerate: never
+
+- name: Configure borgmatic
+  tags:
+    - backups
+    - borgmatic
+  block:
+    # 0700/0600 throughout: these files carry the repo URLs, which are vault
+    # values, and borgbase ones are user@host:repo strings.
+    - name: Config directory
+      file:
+        path: "{{ borgmatic_config_dir }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0700"
+
+    - name: Per-dataset config
+      template:
+        src: borgmatic.yaml.j2
+        dest: "{{ borgmatic_config_dir }}/{{ item.name }}.yaml"
+        owner: root
+        group: root
+        mode: "0600"
+      loop: "{{ borgmatic_datasets }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    - name: Rotate the borgmatic log
+      template:
+        src: borgmatic-logrotate.j2
+        dest: /etc/logrotate.d/borgmatic
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Validate generated config
+      command: "{{ borgmatic_bin }} -c {{ borgmatic_config_dir }}/{{ item.name }}.yaml config validate"
+      loop: "{{ borgmatic_datasets }}"
+      loop_control:
+        label: "{{ item.name }}"
+      changed_when: false
+
+- name: Schedule borgmatic
+  tags:
+    - backups
+    - borgmatic
+  block:
+    - name: Service unit
+      template:
+        src: borgmatic.service.j2
+        dest: /etc/systemd/system/borgmatic.service
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Timer unit
+      template:
+        src: borgmatic.timer.j2
+        dest: /etc/systemd/system/borgmatic.timer
+        owner: root
+        group: root
+        mode: "0644"
+
+    # Off until borgmatic_timer_enabled is set, so installing this role does not
+    # start a second backup system on its own.
+    - name: Timer state
+      systemd:
+        name: borgmatic.timer
+        daemon_reload: true
+        enabled: "{{ borgmatic_timer_enabled }}"
+        state: "{{ 'started' if borgmatic_timer_enabled else 'stopped' }}"
