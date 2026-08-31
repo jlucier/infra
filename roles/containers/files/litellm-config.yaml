@@ -21,12 +21,12 @@ model_list:
   # 500. Retest this after an ollama upgrade or a new model.
   - model_name: "qwen3.8-27b-low"
     litellm_params:
-      model: "ollama_chat/hf.co/unsloth/Qwen3.8-27B-GGUF:UD-Q6_K_XL"
+      model: "ollama_chat/hf.co/unsloth/Qwen3.8-27B-GGUF:UD-Q5_K_XL"
       api_base: "http://ollama:11434"
       reasoning_effort: "low"
   - model_name: "qwen3.8-27b-medium"
     litellm_params:
-      model: "ollama_chat/hf.co/unsloth/Qwen3.8-27B-GGUF:UD-Q6_K_XL"
+      model: "ollama_chat/hf.co/unsloth/Qwen3.8-27B-GGUF:UD-Q5_K_XL"
       api_base: "http://ollama:11434"
       reasoning_effort: "medium"
 
