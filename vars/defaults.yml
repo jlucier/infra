@@ -21,6 +21,8 @@ jellyfin_http: 8096
 grafana_http: 3000
 syncthing_http: 8384
 immich_http: 2283
+homeassistant_http: 8123
+esphome_http: 6052
 
 # "release" follows the Immich stable channel. To control the upgrades by hand,
 # set a version tag here instead.

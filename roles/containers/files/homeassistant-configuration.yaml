@@ -1,0 +1,20 @@
+# Seeded by Ansible (roles/containers/tasks/homeassistant.yml) on the first run
+# only. After that the file belongs to you and to the Home Assistant UI, and
+# Ansible leaves it alone. Ansible cannot own it, because the UI writes to it.
+
+# Loads the standard set of integrations, including the discovery that the host
+# network exists for.
+default_config:
+
+http:
+  # Traefik terminates TLS and proxies to port 8123. Without these two settings
+  # Home Assistant sees every request as coming from the Traefik container and
+  # rejects it with "A request from a reverse proxy was received".
+  use_x_forwarded_for: true
+  trusted_proxies:
+    # The docker proxy network that Traefik runs on.
+    - 172.22.0.0/16
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml

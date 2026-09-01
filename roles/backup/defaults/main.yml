@@ -59,6 +59,11 @@ borgmatic_datasets:
       # Excluded here, but the sqlite_databases hook below captures it.
       # grafana.db is SQLite with a live journal, so a file copy may not reopen.
       - "{{ docker_dir }}/analytics/grafana"
+      # Same reason as grafana.db. home-assistant_v2.db is the recorder
+      # history, and Home Assistant writes to it constantly. The
+      # sqlite_databases hook below captures it. The -wal and -shm files are
+      # only useful next to a matching database file, so drop them too.
+      - "{{ docker_dir }}/homeassistant/config/home-assistant_v2.db*"
     repositories:
       - label: borgbase
         path: "{{ homeboi_docker_borgbase_repo }}"
@@ -73,6 +78,8 @@ borgmatic_datasets:
     sqlite_databases:
       - name: grafana
         path: "{{ docker_dir }}/analytics/grafana/grafana.db"
+      - name: homeassistant
+        path: "{{ docker_dir }}/homeassistant/config/home-assistant_v2.db"
 
   - name: media
     source: /bigboi/media

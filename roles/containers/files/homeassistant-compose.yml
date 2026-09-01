@@ -1,0 +1,70 @@
+# Managed by Ansible (roles/containers/tasks/homeassistant.yml). Do not edit on
+# the host.
+#
+# Home automation stack. Both services use the host network, not the proxy
+# bridge, because both need LAN broadcast traffic:
+#   - homeassistant discovers devices over mDNS and SSDP. On a bridge network it
+#       finds nothing, and you must add every device by IP.
+#   - esphome finds devices over mDNS and sends OTA updates to them.
+#
+# Traefik still routes to both. Its docker provider cannot read an IP from a
+# host-network container, so it falls back to the host.docker.internal entry in
+# the traefik compose file. Syncthing already relies on this. Only the
+# loadbalancer.server.port label is needed.
+services:
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant:stable
+    container_name: homeassistant
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - "./config:/config:z"
+      - /etc/localtime:/etc/localtime:ro
+      # For host Bluetooth, add:
+      #   - /run/dbus:/run/dbus:ro
+      # and set privileged: true. Neither is needed without a Bluetooth adapter.
+    environment:
+      - TZ={{ timezone }}
+    # A Zigbee or Z-Wave USB stick goes here. Use the /dev/serial/by-id path, not
+    # /dev/ttyUSB0, because the ttyUSB number changes between reboots. Find it
+    # with `ls -l /dev/serial/by-id/`.
+    # devices:
+    #   - /dev/serial/by-id/<stick>:/dev/ttyUSB0
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.homeassistant.rule=Host(`homeassistant.{{ dns_name }}`)"
+      - "traefik.http.routers.homeassistant.entrypoints=https"
+      - "traefik.http.services.homeassistant.loadbalancer.server.port={{ homeassistant_http }}"
+      - "traefik.http.routers.homeassistant.tls.certresolver=godaddy"
+
+  esphome:
+    # ESPHome Device Builder. It compiles the device YAML in ./esphome and sends
+    # the firmware to the board. It is not needed to control the devices: the
+    # ESPHome integration in Home Assistant does that, and it is part of core.
+    #
+    # A new board needs one serial write. Use "Plug into this computer" in the
+    # Install menu. The server compiles, then your browser writes the firmware
+    # over WebSerial, so the board plugs into your laptop and never into homeboi.
+    # WebSerial needs Chrome or Edge and an HTTPS page. Every flash after the
+    # first one goes over wifi.
+    image: ghcr.io/esphome/esphome:stable
+    container_name: esphome
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - "./esphome:/config:z"
+    environment:
+      - TZ={{ timezone }}
+      - PUID={{ uid }}
+      - PGID={{ guid }}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.esphome.rule=Host(`esphome.{{ dns_name }}`)"
+      - "traefik.http.routers.esphome.entrypoints=https"
+      - "traefik.http.services.esphome.loadbalancer.server.port={{ esphome_http }}"
+      - "traefik.http.routers.esphome.tls.certresolver=godaddy"
+      # The dashboard has no auth of its own here, so Traefik guards it. The
+      # value is htpasswd format. Every $ must be doubled to $$ in a compose
+      # file, the same as traefik_dashboard_credentials.
+      - "traefik.http.middlewares.esphome-auth.basicauth.users={{ esphome_dashboard_credentials }}"
+      - "traefik.http.routers.esphome.middlewares=esphome-auth"

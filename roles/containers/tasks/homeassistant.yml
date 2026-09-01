@@ -1,0 +1,61 @@
+---
+- name: Configure Home Assistant
+  tags:
+    - containers
+    - homeassistant
+    - esphome
+  block:
+    - name: Create and chmod homeassistant folders
+      become: true
+      file:
+        path: "{{ docker_dir }}/homeassistant/{{ item }}"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        state: directory
+        mode: 0755
+      loop:
+        - config
+        - esphome
+
+    - name: Seed the Home Assistant configuration file
+      become: true
+      template:
+        src: files/homeassistant-configuration.yaml
+        dest: "{{ docker_dir }}/homeassistant/config/configuration.yaml"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        mode: 0644
+        # Seed only. The Home Assistant UI writes to this file, so Ansible must
+        # not overwrite it on a later run.
+        force: false
+
+    # configuration.yaml includes these three. Each must exist before the first
+    # start, or Home Assistant fails to load its config. The UI editors for
+    # automations, scripts, and scenes then write to them. The empty value
+    # differs per file: scripts.yaml holds a mapping, the other two hold a list.
+    - name: Seed the Home Assistant include files
+      become: true
+      copy:
+        content: "{{ item.content }}\n"
+        dest: "{{ docker_dir }}/homeassistant/config/{{ item.name }}"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        mode: 0644
+        force: false
+      loop:
+        - { name: automations.yaml, content: "[]" }
+        - { name: scenes.yaml, content: "[]" }
+        - { name: scripts.yaml, content: "{}" }
+
+    - name: Sync compose file
+      become: true
+      template:
+        src: files/homeassistant-compose.yml
+        dest: "{{ docker_dir }}/homeassistant/docker-compose.yml"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        mode: 0600
+
+    - name: Run homeassistant compose project
+      community.docker.docker_compose_v2:
+        project_src: "{{ docker_dir }}/homeassistant"

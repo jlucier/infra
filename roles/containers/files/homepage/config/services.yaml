@@ -68,6 +68,16 @@
         href: "https://litellm.{{ dns_name }}/ui"
         siteMonitor: "http://litellm:4000/health/liveliness"
         icon: /images/litellm.svg
+    - "Home Assistant":
+        href: "https://homeassistant.{{ dns_name }}"
+        # Homepage runs on the proxy bridge, and both of these run on the host
+        # network, so no container name resolves here. Reach them by host IP.
+        siteMonitor: "http://{{ homeboi_ip }}:{{ homeassistant_http }}"
+        icon: home-assistant.svg
+    - ESPHome:
+        href: "https://esphome.{{ dns_name }}"
+        siteMonitor: "http://{{ homeboi_ip }}:{{ esphome_http }}"
+        icon: esphome.svg
     - MBTA:
         href: "https://mbta.{{ dns_name }}"
         icon: /images/mbta.png
