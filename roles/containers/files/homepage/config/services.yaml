@@ -16,6 +16,7 @@
           type: jellyfin
           url: "http://jellyfin:{{ jellyfin_http }}"
           key: "{{ jellyfin_api_key }}"
+          version: 2
           enableBlocks: true # optional, defaults to false
           enableNowPlaying: true # optional, defaults to true
           enableUser: true # optional, defaults to false
