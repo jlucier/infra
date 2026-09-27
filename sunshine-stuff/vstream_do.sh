@@ -19,13 +19,16 @@ rotation_num_to_name() {
   esac
 }
 
-# Read every setting of one output. The function sets ${prefix}_ROT,
-# ${prefix}_POS, ${prefix}_MODE, and ${prefix}_SCALE.
+# Read the current and streaming modes for one output. The function sets
+# ${prefix}_ROT, ${prefix}_POS, ${prefix}_MODE, ${prefix}_SCALE, and
+# ${prefix}_STREAM_MODE.
 parse_output_settings() {
   local output_name="$1"
   local prefix="$2"
   local in_output=0
-  local rot_num="" pos="" mode="" scale=""
+  local rot_num="" pos="" mode="" scale="" stream_mode=""
+  local mode_entry
+  local -a modes=()
 
   while IFS= read -r line; do
     if [[ "$line" =~ ^Output:.*\ $output_name\  ]]; then
@@ -39,9 +42,18 @@ parse_output_settings() {
         pos="${BASH_REMATCH[1]}"
       elif [[ "$line" =~ Scale:\ *([0-9.]+) ]]; then
         scale="${BASH_REMATCH[1]}"
-      elif [[ "$line" =~ Modes:.*\ ([0-9]+):[0-9]+x[0-9]+@[0-9.]+\*! ]]; then
-        # Take the mode index, such as "1" from "1:3440x1440@59.97*!".
-        mode="${BASH_REMATCH[1]}"
+      elif [[ "$line" =~ Modes: ]]; then
+        if [[ "$line" =~ Modes:.*\ ([0-9]+):[0-9]+x[0-9]+@[0-9.]+\*! ]]; then
+          mode="${BASH_REMATCH[1]}"
+        fi
+
+        IFS=' ' read -r -a modes <<< "${line#*Modes:}"
+        for mode_entry in "${modes[@]}"; do
+          if [[ "$mode_entry" =~ ^([0-9]+):${STREAM_WIDTH}x${STREAM_HEIGHT}@ ]]; then
+            stream_mode="${BASH_REMATCH[1]}"
+            break
+          fi
+        done
       fi
     fi
   done <<< "$KS_OUTPUT"
@@ -50,6 +62,7 @@ parse_output_settings() {
   printf -v "${prefix}_POS" '%s' "$pos"
   printf -v "${prefix}_MODE" '%s' "$mode"
   printf -v "${prefix}_SCALE" '%s' "$scale"
+  printf -v "${prefix}_STREAM_MODE" '%s' "$stream_mode"
 }
 
 # Find the current primary output, which has priority 1.
@@ -68,20 +81,32 @@ if [[ -z "$PRIMARY_OUT" ]]; then
   PRIMARY_OUT="$(echo "$KS_OUTPUT" | awk '/^Output:/{print $3; exit}')"
 fi
 
-# DP-2 is the 16:9 monitor that the stream uses.
-TARGET_OUT="DP-2"
-# The script disables DP-1 while the stream runs.
-OTHER_OUT="DP-1"
+# DP-1 is the ultrawide output. Switch it to its available 16:9 QHD mode.
+TARGET_OUT="DP-1"
+STREAM_WIDTH=2560
+STREAM_HEIGHT=1440
 
-# Read every setting of both monitors.
 parse_output_settings "$TARGET_OUT" "TARGET"
-parse_output_settings "$OTHER_OUT" "OTHER"
+
+if [[ -z "$TARGET_MODE" ]]; then
+  echo "Could not find the current mode for $TARGET_OUT." >&2
+  exit 1
+fi
+
+if [[ -z "$TARGET_STREAM_MODE" ]]; then
+  echo "No ${STREAM_WIDTH}x${STREAM_HEIGHT} mode is available on $TARGET_OUT." >&2
+  exit 1
+fi
+
+if [[ -f "$STATE_FILE" ]]; then
+  echo "State file already exists; restore the previous display state before starting another session." >&2
+  exit 1
+fi
 
 echo "Current state:"
 echo "  Primary: $PRIMARY_OUT"
 echo "  Target: $TARGET_OUT (rot: $TARGET_ROT, pos: $TARGET_POS, mode: $TARGET_MODE, scale: $TARGET_SCALE)"
-echo "  Other: $OTHER_OUT (rot: $OTHER_ROT, pos: $OTHER_POS, mode: $OTHER_MODE, scale: $OTHER_SCALE)"
-echo "  Will disable: $OTHER_OUT"
+echo "  Stream mode: $TARGET_STREAM_MODE (${STREAM_WIDTH}x${STREAM_HEIGHT})"
 
 # Save the state so vstream_undo.sh can restore it.
 cat > "$STATE_FILE" <<EOF
@@ -91,16 +116,10 @@ TARGET_ROT=$TARGET_ROT
 TARGET_POS=$TARGET_POS
 TARGET_MODE=$TARGET_MODE
 TARGET_SCALE=$TARGET_SCALE
-OTHER_OUT=$OTHER_OUT
-OTHER_ROT=$OTHER_ROT
-OTHER_POS=$OTHER_POS
-OTHER_MODE=$OTHER_MODE
-OTHER_SCALE=$OTHER_SCALE
 EOF
 
-# Rotate the target monitor to landscape, make it primary, then disable the
-# other output.
-echo "Setting $TARGET_OUT to landscape and primary, disabling $OTHER_OUT..."
-kscreen-doctor "output.$TARGET_OUT.rotation.none" "output.$TARGET_OUT.primary" "output.$OTHER_OUT.disable"
+# Set the output mode for the stream and make it primary.
+echo "Setting $TARGET_OUT to ${STREAM_WIDTH}x${STREAM_HEIGHT} and primary..."
+kscreen-doctor "output.$TARGET_OUT.mode.$TARGET_STREAM_MODE" "output.$TARGET_OUT.primary"
 
 echo "Done. State saved to $STATE_FILE"

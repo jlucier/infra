@@ -33,3 +33,15 @@ If the cookies are not enough, read the
 bgutil sidecar was removed. See the git history for the wiring if you must add
 it back. To pull a newer yt-dlp, rebuild:
 `docker compose -f /fastboi/docker/ytdlp/docker-compose.yml up -d --build`.
+
+## Sunshine
+
+`sunshine-stuff/vstream_do.sh` saves `DP-1` settings and switches to its
+available 2560×1440 (16:9) mode for streaming. `sunshine-stuff/vstream_undo.sh`
+restores the saved settings when the session ends.
+
+The optional Skyrim wrapper is kept with the mod bundle at
+`~/sync/games/skyrim-mods-1.7.104/skyrim-launch.sh`.
+Run `~/sync/games/skyrim-mods-1.7.104/install.sh --install-launcher`
+to install it in the Skyrim game root. The installer prints the matching Steam
+launch option; add `[PATH]` if the library cannot be auto-detected.
