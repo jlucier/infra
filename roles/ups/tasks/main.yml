@@ -13,6 +13,117 @@
         state: stopped
         enabled: false
         masked: true
+    - name: Gather UPS-related service state
+      service_facts:
+    - name: Stop and disable legacy single-instance apcupsd exporter
+      systemd_service:
+        name: apcupsd_exporter.service
+        state: stopped
+        enabled: false
+      when: "'apcupsd_exporter.service' in ansible_facts.services"
+
+    - name: Remove legacy single-instance apcupsd exporter unit
+      file:
+        path: /etc/systemd/system/apcupsd_exporter.service
+        state: absent
+      register: legacy_exporter_unit
+
+    - name: Reload systemd after removing legacy exporter unit
+      systemd_service:
+        daemon_reload: true
+      when: legacy_exporter_unit.changed
+
+    - name: Stop and disable unconfigured apcupsd exporters
+      systemd_service:
+        name: "{{ item.key }}"
+        state: stopped
+        enabled: false
+      loop: >-
+        {{
+          ansible_facts.services
+          | dict2items
+          | selectattr('key', 'match', '^apcupsd_exporter@.+[.]service$')
+          | list
+        }}
+      loop_control:
+        label: "{{ item.key }}"
+      when: >-
+        item.key not in (
+          upses
+          | map(attribute='name')
+          | map('regex_replace', '^', 'apcupsd_exporter@')
+          | map('regex_replace', '$', '.service')
+          | list
+        )
+
+    - name: Stop and disable unconfigured apcupsd instances
+      systemd_service:
+        name: "{{ item.key }}"
+        state: stopped
+        enabled: false
+      loop: >-
+        {{
+          ansible_facts.services
+          | dict2items
+          | selectattr('key', 'match', '^apcupsd@.+[.]service$')
+          | list
+        }}
+      loop_control:
+        label: "{{ item.key }}"
+      when: >-
+        item.key not in (
+          upses
+          | map(attribute='name')
+          | map('regex_replace', '^', 'apcupsd@')
+          | map('regex_replace', '$', '.service')
+          | list
+        )
+
+    - name: Find per-UPS apcupsd configs
+      find:
+        paths: /etc/apcupsd
+        patterns: "apcupsd-*.conf"
+        file_type: file
+      register: existing_ups_configs
+
+    - name: Remove configs for unconfigured UPSes
+      file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: "{{ existing_ups_configs.files }}"
+      loop_control:
+        label: "{{ item.path }}"
+      when: >-
+        item.path not in (
+          upses
+          | map(attribute='name')
+          | map('regex_replace', '^', '/etc/apcupsd/apcupsd-')
+          | map('regex_replace', '$', '.conf')
+          | list
+        )
+
+    - name: Find per-UPS exporter environment files
+      find:
+        paths: /etc/default
+        patterns: "apcupsd_exporter-*"
+        file_type: file
+      register: existing_exporter_envs
+
+    - name: Remove exporter environments for unconfigured UPSes
+      file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: "{{ existing_exporter_envs.files }}"
+      loop_control:
+        label: "{{ item.path }}"
+      when: >-
+        item.path not in (
+          upses
+          | map(attribute='name')
+          | map('regex_replace', '^', '/etc/default/apcupsd_exporter-')
+          | list
+        )
+
 
     - name: Mark stock /etc/default/apcupsd as not configured
       # Stops the stock unit from starting if someone unmasks it later.

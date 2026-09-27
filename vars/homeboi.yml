@@ -1,13 +1,20 @@
-# Fan control: GPU-temp-driven PWM for the pump header (W_PUMP+ / NCT6687 pwm2).
+# Fan control: GPU-temp-driven PWM for the Tesla V100's 12V blower fan. The V100
+# has no fan of its own. The blower plugs into PUMP_FAN1 (NCT6687 pwm2/fan2)
+# because that header takes the most current. Blower spec: 1400 RPM / 0.1A at
+# 30%, 4800 RPM / 1.5A at 100%. The board manual rates the fan headers at 3A in
+# PWM mode and 1A in DC mode, so set PUMP_FAN1 to PWM mode in BIOS > HARDWARE
+# MONITOR. In PWM mode the header holds 12V at every duty.
 #
-# pwm_channel: fan2 spins at 2547 RPM at 39% PWM (99/255) at idle. A high RPM
-# for a low PWM is a pump signature. To confirm the channel, change the value by
-# hand and watch /sys/class/hwmon/hwmon*/fan*_input.
+# The daemon sets pwm2 in manual mode (pwm2_enable=1). When the daemon stops,
+# pwm2 keeps its last value and BIOS does not take the header back.
 #
-# gpu_index: 0 = GTX 1650 (the ollama GPU); 1 = Tesla PG500 (no fan).
+# pwm_channel: to confirm the channel, change pwm2 by hand and watch
+# /sys/class/hwmon/hwmon*/fan2_input.
+#
+# gpu_index: 1 = Tesla V100 (board name "PG500-216" in nvidia-smi); 0 = GTX 1650.
 #
 # Curve breakpoints [gpu_temp_deg_C, pwm_0-255]. The daemon interpolates between
-# the points. 100/255 is 39%. Do not go below it, or the pump bearing wears.
+# the points.
 gpu_fan_pwm_channel: 2
 gpu_fan_gpu_index: 1
 gpu_fan_poll_interval: 5
@@ -15,8 +22,8 @@ gpu_fan_curve:
   - [30, 0]
   - [55, 80]
   - [65, 120]
-  - [75, 200]
-  - [80, 255]
+  - [72, 145]
+  - [78, 180]
 
 # The NVIDIA driver stays on the 580.xx branch. The 595 branch moved Volta to
 # legacy and refuses to claim the V100. Only the GTX 1650 stays usable, and the

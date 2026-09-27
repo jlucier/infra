@@ -40,6 +40,7 @@
         remote_src: true
       loop:
         - nct6687.c
+        - Kbuild
         - Makefile
         - dkms.conf
       register: dkms_source
@@ -81,7 +82,9 @@
       failed_when: modprobe_result.rc != 0
 
 - name: Deploy fan control daemon
-  tags: fancontrol
+  tags:
+    - fancontrol
+    - fancurve
   block:
     - name: Install gpu-fan script
       ansible.builtin.template:
