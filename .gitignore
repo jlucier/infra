@@ -1,6 +1,5 @@
 inventory.*
-vault.yml
-vault/**/*
+read-pass.sh
 **/.DS_Store
 **/wg0.conf
 wireguard
