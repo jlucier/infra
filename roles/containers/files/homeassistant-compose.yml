@@ -13,7 +13,7 @@
 # loadbalancer.server.port label is needed.
 services:
   homeassistant:
-    image: ghcr.io/home-assistant/home-assistant:stable
+    image: ghcr.io/home-assistant/home-assistant:beta
     container_name: homeassistant
     restart: unless-stopped
     network_mode: host
