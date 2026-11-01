@@ -37,8 +37,13 @@
     - Syncthing:
         href: "https://syncthing.{{ dns_name }}"
         # could not manage to get this working with host.docker.internal
-        siteMonitor: "http://syncthing:{{ syncthing_http }}"
+        siteMonitor: "https://syncthing.{{ dns_name }}"
         icon: syncthing.svg
+        widget:
+          type: syncthing
+          url: "https://syncthing.{{ dns_name }}"
+          key: "{{ syncthing_api_key }}"
+
     - Grafana:
         href: "https://grafana.{{ dns_name }}"
         siteMonitor: "http://grafana:{{ grafana_http }}"
