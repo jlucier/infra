@@ -87,6 +87,10 @@
     - MBTA:
         href: "https://mbta.{{ dns_name }}"
         icon: /images/mbta.png
+    - Spoolman:
+        href: "https://spoolman.{{ dns_name }}"
+        siteMonitor: "http://spoolman:8000/api/v1/health"
+        icon: spoolman.svg
 
 - Network:
     - UniFi:
