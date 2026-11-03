@@ -156,3 +156,4 @@
 - import_tasks: immich.yml
 - import_tasks: ytdlp.yml
 - import_tasks: homeassistant.yml
+- import_tasks: spoolman.yml

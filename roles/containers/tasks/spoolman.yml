@@ -1,0 +1,36 @@
+---
+- name: Configure Spoolman
+  tags:
+    - containers
+    - spoolman
+  block:
+    - name: Create Spoolman project directory
+      become: true
+      ansible.builtin.file:
+        path: "{{ docker_dir }}/spoolman"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        state: directory
+        mode: "0755"
+
+    - name: Create Spoolman data directory
+      become: true
+      ansible.builtin.file:
+        path: "{{ docker_dir }}/spoolman/data"
+        owner: "1000"
+        group: "1000"
+        state: directory
+        mode: "0755"
+
+    - name: Sync Spoolman compose file
+      become: true
+      ansible.builtin.template:
+        src: files/spoolman-compose.yml
+        dest: "{{ docker_dir }}/spoolman/docker-compose.yml"
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        mode: "0644"
+
+    - name: Run Spoolman compose project
+      community.docker.docker_compose_v2:
+        project_src: "{{ docker_dir }}/spoolman"
